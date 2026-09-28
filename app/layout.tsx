@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Nearby in Pune",
+  title: "Nearby Discovery",
   description: "Curated landmarks, heritage spots, and neighborhood institutions in Pune",
 };
 
