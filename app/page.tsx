@@ -916,6 +916,8 @@ interface LocationSuggestion {
   placeType: string;
   city: string;
   contextText: string;
+  place_id?: string;
+  address?: string;
 }
 
 interface SelectedLocationData {
@@ -935,16 +937,53 @@ interface GoogleAddressComponent {
 interface GoogleGeocodeResult {
   address_components: GoogleAddressComponent[];
   formatted_address?: string;
+  geometry?: {
+    location?: {
+      lat: () => number;
+      lng: () => number;
+    };
+  };
+}
+
+interface PlacePredictionText {
+  text?: string;
+  toString?: () => string;
+}
+
+interface GooglePlacePrediction {
+  placeId: string;
+  text?: PlacePredictionText | string;
+  mainText?: PlacePredictionText | string;
+  secondaryText?: PlacePredictionText | string;
+  types?: string[];
+}
+
+interface GoogleAutocompleteSuggestionItem {
+  placePrediction?: GooglePlacePrediction;
+}
+
+interface GoogleAutocompleteSuggestionsResponse {
+  suggestions: GoogleAutocompleteSuggestionItem[];
 }
 
 interface WindowWithGoogle extends Window {
   google?: {
     maps?: {
+      importLibrary?: (libraryName: string) => Promise<unknown>;
       Geocoder?: new () => {
         geocode: (
-          request: { location: { lat: number; lng: number } },
+          request: { location?: { lat: number; lng: number }; placeId?: string; address?: string },
           callback: (results: GoogleGeocodeResult[] | null, status: string) => void
         ) => void;
+      };
+      places?: {
+        AutocompleteSuggestion?: {
+          fetchAutocompleteSuggestions: (request: {
+            input: string;
+            includedPrimaryTypes?: string[];
+            includedRegionCodes?: string[];
+          }) => Promise<GoogleAutocompleteSuggestionsResponse>;
+        };
       };
     };
   };
@@ -1004,6 +1043,36 @@ const CITIES: CityItem[] = [
   },
 ];
 
+const ensureGoogleMapsLoaded = async (apiKey: string): Promise<void> => {
+  if (typeof window === "undefined") return;
+  const win = window as unknown as WindowWithGoogle;
+  if (win.google?.maps?.places?.AutocompleteSuggestion && win.google?.maps?.Geocoder) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const scriptId = "google-maps-js-sdk";
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement("script");
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
+      script.async = true;
+      document.head.appendChild(script);
+    }
+    if (win.google?.maps) {
+      resolve();
+    } else {
+      script.addEventListener("load", () => resolve(), { once: true });
+      script.addEventListener("error", (e) => reject(e), { once: true });
+    }
+  });
+
+  if (win.google?.maps?.importLibrary) {
+    await win.google.maps.importLibrary("places");
+  }
+};
+
 export default function Home() {
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [placeSearchQuery, setPlaceSearchQuery] = useState("");
@@ -1050,107 +1119,180 @@ export default function Home() {
   const [selectedCrowd, setSelectedCrowd] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-  // 1 & 4) Mapbox Geocoding API integration with 300ms debounce
+  // 1 & 4) Google Maps JavaScript API AutocompleteSuggestion integration with 300ms debounce
   useEffect(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed) {
       return;
     }
 
-    const abortController = new AbortController();
+    let isCancelled = false;
 
     const timer = setTimeout(async () => {
       setIsLoadingLocations(true);
       try {
-        const token =
-          process.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
-          process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ||
-          "";
-
-        if (!token) {
-          throw new Error("Mapbox token not configured");
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+        if (!apiKey) {
+          console.error("Google Maps API key is not configured.");
+          setIsLoadingLocations(false);
+          return;
         }
 
-        const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          trimmed
-        )}.json?access_token=${token}&types=place,locality,neighborhood,district&autocomplete=true&limit=8`;
+        await ensureGoogleMapsLoaded(apiKey);
+        if (isCancelled) return;
 
-        const res = await fetch(endpoint, { signal: abortController.signal });
-        if (!res.ok) {
-          throw new Error(`Mapbox API returned ${res.status}`);
+        const win = window as unknown as WindowWithGoogle;
+        const AutocompleteSuggestion =
+          win.google?.maps?.places?.AutocompleteSuggestion;
+
+        if (!AutocompleteSuggestion?.fetchAutocompleteSuggestions) {
+          throw new Error("Google Maps AutocompleteSuggestion is not available.");
         }
 
-        const data = await res.json();
-        if (Array.isArray(data.features) && data.features.length > 0) {
-          const mapped: LocationSuggestion[] = data.features.map(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (feature: any) => {
-              const contextCity = feature.context?.find(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (c: any) => c.id.startsWith("place")
-              )?.text;
+        const response = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: trimmed,
+        });
 
-              const rawType = feature.place_type?.[0] || "place";
-              const formattedType =
-                rawType === "place"
-                  ? "City"
-                  : rawType === "neighborhood"
-                  ? "Neighborhood"
-                  : rawType === "locality"
-                  ? "Area"
-                  : rawType === "district"
-                  ? "District"
-                  : rawType;
+        if (isCancelled) return;
 
-              return {
-                id: feature.id,
-                name: feature.text,
-                fullName: feature.place_name,
-                latitude: feature.center[1],
-                longitude: feature.center[0],
-                placeType: formattedType,
-                city: contextCity || feature.text,
-                contextText: feature.place_name.startsWith(feature.text)
-                  ? feature.place_name.slice(feature.text.length).replace(/^,\s*/, "")
-                  : feature.place_name,
-              };
-            }
-          );
-          setLocationSuggestions(mapped);
+        const suggestions = response?.suggestions;
+        if (Array.isArray(suggestions) && suggestions.length > 0) {
+          const mapped: LocationSuggestion[] = [];
+
+          for (const item of suggestions) {
+            const pred = item.placePrediction;
+            if (!pred) continue;
+
+            const placeId = pred.placeId;
+            const mainText =
+              typeof pred.mainText === "string"
+                ? pred.mainText
+                : pred.mainText?.text ||
+                  (pred.mainText ? String(pred.mainText) : "");
+            const secondaryText =
+              typeof pred.secondaryText === "string"
+                ? pred.secondaryText
+                : pred.secondaryText?.text ||
+                  (pred.secondaryText ? String(pred.secondaryText) : "");
+            const fullText =
+              typeof pred.text === "string"
+                ? pred.text
+                : pred.text?.text ||
+                  (pred.text ? String(pred.text) : "");
+
+            const name = mainText || fullText.split(",")[0] || fullText || "Place";
+            const address = secondaryText || fullText || name;
+            const fullName = fullText || (secondaryText ? `${name}, ${secondaryText}` : name);
+
+            const primaryType = pred.types?.[0] || "place";
+            const formattedType =
+              primaryType === "locality" || primaryType === "political"
+                ? "City"
+                : primaryType === "sublocality" || primaryType === "neighborhood"
+                ? "Area"
+                : primaryType === "administrative_area_level_2"
+                ? "District"
+                : primaryType === "establishment"
+                ? "Landmark"
+                : "Place";
+
+            mapped.push({
+              id: placeId,
+              place_id: placeId,
+              name,
+              address,
+              fullName,
+              latitude: 0,
+              longitude: 0,
+              placeType: formattedType,
+              city: name,
+              contextText: address,
+            });
+          }
+
+          if (mapped.length > 0) {
+            setLocationSuggestions(mapped);
+          } else {
+            // Fallback to local matching cities if no predictions returned
+            const q = trimmed.toLowerCase();
+            const localMatches: LocationSuggestion[] = CITIES.filter(
+              (c) =>
+                c.name.toLowerCase().includes(q) ||
+                c.region.toLowerCase().includes(q) ||
+                c.badge.toLowerCase().includes(q) ||
+                c.popularAreas.some((a) => a.toLowerCase().includes(q))
+            ).map((c) => ({
+              id: `local-${c.id}`,
+              place_id: `local-${c.id}`,
+              name: c.name,
+              address: c.region,
+              fullName: c.displayLocation,
+              latitude: c.lat,
+              longitude: c.lng,
+              placeType: "City",
+              city: c.name,
+              contextText: c.region,
+            }));
+
+            setLocationSuggestions(localMatches);
+          }
         } else {
-          setLocationSuggestions([]);
+          // Fallback to local matching cities
+          const q = trimmed.toLowerCase();
+          const localMatches: LocationSuggestion[] = CITIES.filter(
+            (c) =>
+              c.name.toLowerCase().includes(q) ||
+              c.region.toLowerCase().includes(q) ||
+              c.badge.toLowerCase().includes(q) ||
+              c.popularAreas.some((a) => a.toLowerCase().includes(q))
+          ).map((c) => ({
+            id: `local-${c.id}`,
+            place_id: `local-${c.id}`,
+            name: c.name,
+            address: c.region,
+            fullName: c.displayLocation,
+            latitude: c.lat,
+            longitude: c.lng,
+            placeType: "City",
+            city: c.name,
+            contextText: c.region,
+          }));
+
+          setLocationSuggestions(localMatches);
         }
-      } catch (err: unknown) {
-        if ((err as Error)?.name === "AbortError") return;
-
-        // Graceful fallback to matching local cities if offline or token issues
-        const q = trimmed.toLowerCase();
-        const localMatches: LocationSuggestion[] = CITIES.filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.region.toLowerCase().includes(q) ||
-            c.badge.toLowerCase().includes(q) ||
-            c.popularAreas.some((a) => a.toLowerCase().includes(q))
-        ).map((c) => ({
-          id: `local-${c.id}`,
-          name: c.name,
-          fullName: c.displayLocation,
-          latitude: c.lat,
-          longitude: c.lng,
-          placeType: "City",
-          city: c.name,
-          contextText: c.region,
-        }));
-
-        setLocationSuggestions(localMatches);
-      } finally {
         setIsLoadingLocations(false);
+      } catch (err) {
+        if (!isCancelled) {
+          console.error("Google Maps place search error:", err);
+          const q = trimmed.toLowerCase();
+          const localMatches: LocationSuggestion[] = CITIES.filter(
+            (c) =>
+              c.name.toLowerCase().includes(q) ||
+              c.region.toLowerCase().includes(q) ||
+              c.badge.toLowerCase().includes(q) ||
+              c.popularAreas.some((a) => a.toLowerCase().includes(q))
+          ).map((c) => ({
+            id: `local-${c.id}`,
+            place_id: `local-${c.id}`,
+            name: c.name,
+            address: c.region,
+            fullName: c.displayLocation,
+            latitude: c.lat,
+            longitude: c.lng,
+            placeType: "City",
+            city: c.name,
+            contextText: c.region,
+          }));
+
+          setLocationSuggestions(localMatches);
+          setIsLoadingLocations(false);
+        }
       }
     }, 300);
 
     return () => {
+      isCancelled = true;
       clearTimeout(timer);
-      abortController.abort();
     };
   }, [searchQuery]);
 
@@ -1161,42 +1303,85 @@ export default function Home() {
   const handleSelectLocation = (location: {
     name: string;
     fullName?: string;
-    latitude: number;
-    longitude: number;
+    latitude?: number;
+    longitude?: number;
     city?: string;
+    place_id?: string;
+    id?: string;
+    address?: string;
   }) => {
-    const newLocationData: SelectedLocationData = {
-      name: location.name,
-      fullName: location.fullName || location.name,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      city: location.city || location.name,
+    const resolvedCity = location.city || location.name;
+    const resolvedFullName = location.fullName || location.address || location.name;
+
+    const applySelection = (lat: number, lng: number, city: string) => {
+      const newLocationData: SelectedLocationData = {
+        name: location.name,
+        fullName: resolvedFullName,
+        latitude: lat,
+        longitude: lng,
+        city,
+      };
+
+      // Store name + latitude + longitude
+      setSelectedLocationData(newLocationData);
+
+      // Update selected location in app
+      setSelectedLocation(resolvedFullName);
+      setSelectedCity(city);
+
+      // Reset queries & suggestions
+      setSearchQuery("");
+      setLocationSuggestions([]);
+      setIsLoadingLocations(false);
+      setPlaceSearchQuery("");
+      setDebouncedSearchQuery("");
+
+      // Close modal
+      setIsLocationSheetOpen(false);
+
+      // Sync active map place with first spot in the new city if exists
+      const firstPlace = PLACES.find(
+        (p) => p.city.toLowerCase() === city.toLowerCase()
+      );
+      if (firstPlace) {
+        setSelectedMapPlace(firstPlace);
+      }
     };
 
-    // Store name + latitude + longitude
-    setSelectedLocationData(newLocationData);
+    // If coordinates are already provided (e.g. preset city or reverse geocode), apply immediately
+    if (location.latitude && location.longitude) {
+      applySelection(location.latitude, location.longitude, resolvedCity);
+      return;
+    }
 
-    // Update selected location in app
-    setSelectedLocation(location.fullName || location.name);
-    const resolvedCity = location.city || location.name;
-    setSelectedCity(resolvedCity);
+    // Geocode place_id using Google Maps JS Geocoder to get accurate coordinates
+    const placeId = location.place_id || location.id;
+    const win = typeof window !== "undefined" ? (window as unknown as WindowWithGoogle) : null;
+    if (win?.google?.maps?.Geocoder && placeId && !placeId.startsWith("local-")) {
+      const geocoder = new win.google.maps.Geocoder();
+      geocoder.geocode({ placeId }, (results, status) => {
+        if (status === "OK" && results && results[0]?.geometry?.location) {
+          const loc = results[0].geometry.location;
+          const lat = typeof loc.lat === "function" ? loc.lat() : Number(loc.lat);
+          const lng = typeof loc.lng === "function" ? loc.lng() : Number(loc.lng);
 
-    // Reset queries & suggestions
-    setSearchQuery("");
-    setLocationSuggestions([]);
-    setIsLoadingLocations(false);
-    setPlaceSearchQuery("");
-    setDebouncedSearchQuery("");
+          let cityFromComponents = resolvedCity;
+          if (results[0].address_components) {
+            const locality = results[0].address_components.find((c) =>
+              c.types.includes("locality")
+            );
+            if (locality?.long_name) {
+              cityFromComponents = locality.long_name;
+            }
+          }
 
-    // Close modal
-    setIsLocationSheetOpen(false);
-
-    // Sync active map place with first spot in the new city if exists
-    const firstPlace = PLACES.find(
-      (p) => p.city.toLowerCase() === resolvedCity.toLowerCase()
-    );
-    if (firstPlace) {
-      setSelectedMapPlace(firstPlace);
+          applySelection(lat, lng, cityFromComponents);
+        } else {
+          applySelection(location.latitude || 18.5204, location.longitude || 73.8567, resolvedCity);
+        }
+      });
+    } else {
+      applySelection(location.latitude || 18.5204, location.longitude || 73.8567, resolvedCity);
     }
   };
 
@@ -1252,22 +1437,8 @@ export default function Home() {
           }
 
           // Ensure Google Maps JavaScript SDK is loaded
+          await ensureGoogleMapsLoaded(apiKey);
           const win = window as unknown as WindowWithGoogle;
-          if (!win.google?.maps?.Geocoder) {
-            await new Promise<void>((resolve, reject) => {
-              const scriptId = "google-maps-js-sdk";
-              let script = document.getElementById(scriptId) as HTMLScriptElement | null;
-              if (!script) {
-                script = document.createElement("script");
-                script.id = scriptId;
-                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
-                script.async = true;
-                document.head.appendChild(script);
-              }
-              script.addEventListener("load", () => resolve(), { once: true });
-              script.addEventListener("error", (e) => reject(e), { once: true });
-            });
-          }
 
           if (!win.google?.maps?.Geocoder) {
             throw new Error("Google Maps JavaScript API Geocoder is unavailable.");
