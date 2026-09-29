@@ -966,6 +966,12 @@ interface GoogleAutocompleteSuggestionsResponse {
   suggestions: GoogleAutocompleteSuggestionItem[];
 }
 
+interface NewGooglePlacePhoto {
+  name?: string;
+  widthPx?: number;
+  heightPx?: number;
+}
+
 interface NewGooglePlace {
   displayName?: {
     text?: string;
@@ -976,6 +982,7 @@ interface NewGooglePlace {
     latitude?: number;
     longitude?: number;
   };
+  photos?: NewGooglePlacePhoto[];
 }
 
 interface NewPlacesSearchNearbyResponse {
@@ -1340,7 +1347,7 @@ export default function Home() {
     };
   }, [searchQuery]);
 
-  // Fetch nearby places automatically using Google Places API (New) REST endpoint
+  // Fetch nearby places across distinct categories using Places API (New)
   const fetchNearbyPlaces = async (lat: number, lng: number, city: string) => {
     const searchId = ++lastPlacesSearchIdRef.current;
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
@@ -1350,99 +1357,195 @@ export default function Home() {
     }
 
     try {
-      // 2. Make POST request to Places API (New) searchNearby
-      const response = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
-        method: "POST",
-        // 4. Headers with API key and FieldMask
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.location",
-        },
-        // 3. Request body
-        body: JSON.stringify({
-          includedTypes: ["restaurant"],
-          maxResultCount: 10,
-          locationRestriction: {
-            circle: {
-              center: {
-                latitude: lat,
-                longitude: lng,
-              },
-              radius: 3000,
+      // 1 & 2. SEPARATE API calls for each category (same lat/lng, same radius)
+      const fetchCategoryPlaces = async (categoryType: string): Promise<NewGooglePlace[]> => {
+        try {
+          const response = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Goog-Api-Key": apiKey,
+              "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.location,places.photos",
             },
-          },
-        }),
+            body: JSON.stringify({
+              includedTypes: [categoryType],
+              maxResultCount: 10,
+              locationRestriction: {
+                circle: {
+                  center: {
+                    latitude: lat,
+                    longitude: lng,
+                  },
+                  radius: 3000,
+                },
+              },
+            }),
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            console.warn(`Places API (New) error for category "${categoryType}":`, response.status, errText);
+            return [];
+          }
+
+          const data: NewPlacesSearchNearbyResponse = await response.json();
+          return data.places || [];
+        } catch (catErr) {
+          console.error(`Places API (New) call failed for "${categoryType}":`, catErr);
+          return [];
+        }
+      };
+
+      // Execute separate calls for the 5 specified categories:
+      // Call 1 → restaurant
+      // Call 2 → tourist_attraction
+      // Call 3 → hindu_temple
+      // Call 4 → park
+      // Call 5 → shopping_mall
+      const [restaurantsRaw, attractionsRaw, templesRaw, parksRaw, mallsRaw] = await Promise.all([
+        fetchCategoryPlaces("restaurant"),
+        fetchCategoryPlaces("tourist_attraction"),
+        fetchCategoryPlaces("hindu_temple"),
+        fetchCategoryPlaces("park"),
+        fetchCategoryPlaces("shopping_mall"),
+      ]);
+
+      if (searchId !== lastPlacesSearchIdRef.current) return;
+
+      // 4. Store results separately
+      const categorized = {
+        restaurants: restaurantsRaw,
+        attractions: attractionsRaw,
+        temples: templesRaw,
+        parks: parksRaw,
+        malls: mallsRaw,
+      };
+
+      // Log count per category
+      console.log(`Places API (New) category breakdown for "${city}":`, {
+        restaurants: categorized.restaurants.length,
+        attractions: categorized.attractions.length,
+        temples: categorized.temples.length,
+        parks: categorized.parks.length,
+        malls: categorized.malls.length,
       });
 
-      if (searchId !== lastPlacesSearchIdRef.current) return;
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Google Places API (New) searchNearby error:", response.status, errorText);
-        return;
-      }
-
-      const data: NewPlacesSearchNearbyResponse = await response.json();
-      if (searchId !== lastPlacesSearchIdRef.current) return;
-
-      const rawPlaces = data.places || [];
-
-      // Confirm API call success and log sample response
-      console.log(
-        `Places API (New) searchNearby success for "${city}" (${lat}, ${lng}): found ${rawPlaces.length} places. Full response:`,
-        data
-      );
-      console.log("Places API (New) sample response item:", rawPlaces[0]);
-
-      const fallbackImages = [
-        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?auto=format&fit=crop&w=1200&q=80",
+      // 5. Merge results AFTER fetching:
+      // Limit each category (top 5 each) and interleave to ensure diversity across results
+      const limitPerCategory = 5;
+      const categoriesOrdered = [
+        {
+          items: categorized.attractions.slice(0, limitPerCategory),
+          category: "TOURIST ATTRACTION",
+          defaultVibe: "Lively" as const,
+          defaultCrowd: "High" as const,
+          crowdStatus: "Popular landmark • lively energy",
+          bestTime: "Morning (9 AM–12:30 PM)",
+          descPrefix: "Iconic landmark and cultural heritage destination",
+          fallbackImage: "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1200&q=80",
+        },
+        {
+          items: categorized.temples.slice(0, limitPerCategory),
+          category: "HERITAGE & TEMPLE",
+          defaultVibe: "Chill" as const,
+          defaultCrowd: "Low" as const,
+          crowdStatus: "Serene • spiritual atmosphere",
+          bestTime: "Early Morning (6–9 AM)",
+          descPrefix: "Revered spiritual sanctuary known for serene architecture",
+          fallbackImage: "https://images.unsplash.com/photo-1561361058-c24cecae35ca?auto=format&fit=crop&w=1200&q=80",
+        },
+        {
+          items: categorized.parks.slice(0, limitPerCategory),
+          category: "PARK & NATURE",
+          defaultVibe: "Chill" as const,
+          defaultCrowd: "Low" as const,
+          crowdStatus: "Relaxed green space • peaceful",
+          bestTime: "Late Afternoon (4:30–6:30 PM)",
+          descPrefix: "Scenic urban park featuring lush greenery and walking trails",
+          fallbackImage: "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?auto=format&fit=crop&w=1200&q=80",
+        },
+        {
+          items: categorized.malls.slice(0, limitPerCategory),
+          category: "SHOPPING & MALL",
+          defaultVibe: "Lively" as const,
+          defaultCrowd: "Medium" as const,
+          crowdStatus: "Active shopping • steady flow",
+          bestTime: "Afternoon (2–6 PM)",
+          descPrefix: "Premier shopping and lifestyle destination with top brands",
+          fallbackImage: "https://images.unsplash.com/photo-1567449303078-57ad995bd301?auto=format&fit=crop&w=1200&q=80",
+        },
+        {
+          items: categorized.restaurants.slice(0, limitPerCategory),
+          category: "RESTAURANT & DINING",
+          defaultVibe: "Lively" as const,
+          defaultCrowd: "Medium" as const,
+          crowdStatus: "Popular dining • steady flow",
+          bestTime: "Evening (7–10 PM)",
+          descPrefix: "Acclaimed culinary spot serving chef-curated specialties",
+          fallbackImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
+        },
       ];
 
-      // 5. Store results in EXISTING state (reuse current data structure)
-      const convertedPlaces: Place[] = rawPlaces.map((place, idx) => {
-        const placeLat = place.location?.latitude ?? lat;
-        const placeLng = place.location?.longitude ?? lng;
-        const distKm = getDistanceKm(lat, lng, placeLat, placeLng);
-        const distMiles = distKm * 0.621371;
-        const distanceStr = `${distMiles.toFixed(1)} mi`;
-        const placeName = place.displayName?.text || "Nearby Restaurant";
-        const formattedAddress = place.formattedAddress || "";
-        const areaName = formattedAddress ? formattedAddress.split(",")[0] : city;
-        const idKey = `${placeName}-${formattedAddress}-${idx}`;
-        const numericId = hashStringToPositiveInt(idKey);
-        const vibe: "Chill" | "Lively" = idx % 2 === 0 ? "Lively" : "Chill";
+      // Interleave results from each category to eliminate bias and ensure diversity
+      const maxCategoryLen = Math.max(...categoriesOrdered.map((c) => c.items.length));
+      const seenPlaceNames = new Set<string>();
+      const convertedPlaces: Place[] = [];
 
-        return {
-          id: numericId,
-          rank: idx + 1,
-          name: placeName,
-          category: "RESTAURANT & DINING",
-          city,
-          price: idx % 3 === 0 ? "$$$" : idx % 2 === 0 ? "$$" : "$",
-          distance: distanceStr,
-          area: areaName,
-          crowd: idx % 3 === 0 ? "High" : idx % 2 === 0 ? "Medium" : "Low",
-          crowdStatus:
-            idx % 3 === 0
-              ? "Busy • high energy"
-              : idx % 2 === 0
-              ? "Moderate crowd • steady flow"
-              : "Low crowd • relaxed space",
-          bestTime: "Evening (7–10 PM)",
-          vibe,
-          description: `Popular dining destination in ${areaName} serving chef-curated local favorites and specialties.`,
-          image: fallbackImages[idx % fallbackImages.length],
-          lat: placeLat,
-          lng: placeLng,
-          filterTags: [vibe, "Trending"],
-        };
-      });
+      for (let i = 0; i < maxCategoryLen; i++) {
+        for (const cat of categoriesOrdered) {
+          if (i < cat.items.length) {
+            const place = cat.items[i];
+            const placeName = place.displayName?.text || "Nearby Spot";
+            const formattedAddress = place.formattedAddress || "";
+            const normKey = `${placeName.toLowerCase()}-${formattedAddress.toLowerCase()}`;
+            if (seenPlaceNames.has(normKey)) continue;
+            seenPlaceNames.add(normKey);
 
+            const placeLat = place.location?.latitude ?? lat;
+            const placeLng = place.location?.longitude ?? lng;
+            const distKm = getDistanceKm(lat, lng, placeLat, placeLng);
+            const distMiles = distKm * 0.621371;
+            const distanceStr = `${distMiles.toFixed(1)} mi`;
+            const areaName = formattedAddress ? formattedAddress.split(",")[0] : city;
+            const idKey = `${normKey}-${convertedPlaces.length}`;
+            const numericId = hashStringToPositiveInt(idKey);
+
+            // Construct photo URL from Places API (New)
+            const photoName = place.photos && place.photos.length > 0 ? place.photos[0].name : undefined;
+            const imageUrl = photoName
+              ? `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=400&key=${apiKey}`
+              : cat.fallbackImage;
+
+            convertedPlaces.push({
+              id: numericId,
+              rank: convertedPlaces.length + 1,
+              name: placeName,
+              category: cat.category,
+              city,
+              price: cat.category === "RESTAURANT & DINING" || cat.category === "SHOPPING & MALL" ? "$$" : "$",
+              distance: distanceStr,
+              area: areaName,
+              crowd: cat.defaultCrowd,
+              crowdStatus: cat.crowdStatus,
+              bestTime: cat.bestTime,
+              vibe: cat.defaultVibe,
+              description: `${cat.descPrefix} in ${areaName} offering a memorable visit.`,
+              image: imageUrl,
+              lat: placeLat,
+              lng: placeLng,
+              filterTags: [cat.defaultVibe, "Trending"],
+            });
+          }
+        }
+      }
+
+      // Log diversity confirmation
+      console.log(
+        `Confirmed diversity in results: ${convertedPlaces.length} total places merged across 5 categories:`,
+        convertedPlaces.map((p) => `${p.name} [${p.category}]`)
+      );
+
+      // 6. Send combined list to existing UI
       if (convertedPlaces.length > 0) {
         setPlacesList((prev) => {
           const others = prev.filter((p) => p.city.toLowerCase() !== city.toLowerCase());
@@ -1451,7 +1554,7 @@ export default function Home() {
         setSelectedMapPlace(convertedPlaces[0]);
       }
     } catch (error) {
-      console.error("Error fetching nearby places with Places API (New):", error);
+      console.error("Error fetching categorized places with Places API (New):", error);
     }
   };
 
