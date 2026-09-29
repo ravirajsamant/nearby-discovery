@@ -966,6 +966,22 @@ interface GoogleAutocompleteSuggestionsResponse {
   suggestions: GoogleAutocompleteSuggestionItem[];
 }
 
+interface NewGooglePlace {
+  displayName?: {
+    text?: string;
+    languageCode?: string;
+  };
+  formattedAddress?: string;
+  location?: {
+    latitude?: number;
+    longitude?: number;
+  };
+}
+
+interface NewPlacesSearchNearbyResponse {
+  places?: NewGooglePlace[];
+}
+
 interface WindowWithGoogle extends Window {
   google?: {
     maps?: {
@@ -987,6 +1003,29 @@ interface WindowWithGoogle extends Window {
       };
     };
   };
+}
+
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function hashStringToPositiveInt(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) || 1;
 }
 
 
@@ -1046,7 +1085,10 @@ const CITIES: CityItem[] = [
 const ensureGoogleMapsLoaded = async (apiKey: string): Promise<void> => {
   if (typeof window === "undefined") return;
   const win = window as unknown as WindowWithGoogle;
-  if (win.google?.maps?.places?.AutocompleteSuggestion && win.google?.maps?.Geocoder) {
+  if (
+    win.google?.maps?.places?.AutocompleteSuggestion &&
+    win.google?.maps?.Geocoder
+  ) {
     return;
   }
 
@@ -1081,6 +1123,8 @@ export default function Home() {
   const [selectedModalPlace, setSelectedModalPlace] = useState<Place | null>(null);
   const [selectedMapPlace, setSelectedMapPlace] = useState<Place | null>(PLACES[0]);
   const [activeNavTab, setActiveNavTab] = useState<"discover" | "saved" | "activity" | "profile">("discover");
+  const [placesList, setPlacesList] = useState<Place[]>(PLACES);
+  const lastPlacesSearchIdRef = useRef(0);
 
   // Debounce search query by 300ms for smooth, flicker-free filtering
   useEffect(() => {
@@ -1296,6 +1340,134 @@ export default function Home() {
     };
   }, [searchQuery]);
 
+  // Fetch nearby places automatically using Google Places API (New) REST endpoint
+  const fetchNearbyPlaces = async (lat: number, lng: number, city: string) => {
+    const searchId = ++lastPlacesSearchIdRef.current;
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+    if (!apiKey) {
+      console.warn("Google Maps API key is not configured; keeping default places.");
+      return;
+    }
+
+    try {
+      // 2. Make POST request to Places API (New) searchNearby
+      const response = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
+        method: "POST",
+        // 4. Headers with API key and FieldMask
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": apiKey,
+          "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.location",
+        },
+        // 3. Request body
+        body: JSON.stringify({
+          includedTypes: ["restaurant"],
+          maxResultCount: 10,
+          locationRestriction: {
+            circle: {
+              center: {
+                latitude: lat,
+                longitude: lng,
+              },
+              radius: 3000,
+            },
+          },
+        }),
+      });
+
+      if (searchId !== lastPlacesSearchIdRef.current) return;
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Google Places API (New) searchNearby error:", response.status, errorText);
+        return;
+      }
+
+      const data: NewPlacesSearchNearbyResponse = await response.json();
+      if (searchId !== lastPlacesSearchIdRef.current) return;
+
+      const rawPlaces = data.places || [];
+
+      // Confirm API call success and log sample response
+      console.log(
+        `Places API (New) searchNearby success for "${city}" (${lat}, ${lng}): found ${rawPlaces.length} places. Full response:`,
+        data
+      );
+      console.log("Places API (New) sample response item:", rawPlaces[0]);
+
+      const fallbackImages = [
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?auto=format&fit=crop&w=1200&q=80",
+      ];
+
+      // 5. Store results in EXISTING state (reuse current data structure)
+      const convertedPlaces: Place[] = rawPlaces.map((place, idx) => {
+        const placeLat = place.location?.latitude ?? lat;
+        const placeLng = place.location?.longitude ?? lng;
+        const distKm = getDistanceKm(lat, lng, placeLat, placeLng);
+        const distMiles = distKm * 0.621371;
+        const distanceStr = `${distMiles.toFixed(1)} mi`;
+        const placeName = place.displayName?.text || "Nearby Restaurant";
+        const formattedAddress = place.formattedAddress || "";
+        const areaName = formattedAddress ? formattedAddress.split(",")[0] : city;
+        const idKey = `${placeName}-${formattedAddress}-${idx}`;
+        const numericId = hashStringToPositiveInt(idKey);
+        const vibe: "Chill" | "Lively" = idx % 2 === 0 ? "Lively" : "Chill";
+
+        return {
+          id: numericId,
+          rank: idx + 1,
+          name: placeName,
+          category: "RESTAURANT & DINING",
+          city,
+          price: idx % 3 === 0 ? "$$$" : idx % 2 === 0 ? "$$" : "$",
+          distance: distanceStr,
+          area: areaName,
+          crowd: idx % 3 === 0 ? "High" : idx % 2 === 0 ? "Medium" : "Low",
+          crowdStatus:
+            idx % 3 === 0
+              ? "Busy • high energy"
+              : idx % 2 === 0
+              ? "Moderate crowd • steady flow"
+              : "Low crowd • relaxed space",
+          bestTime: "Evening (7–10 PM)",
+          vibe,
+          description: `Popular dining destination in ${areaName} serving chef-curated local favorites and specialties.`,
+          image: fallbackImages[idx % fallbackImages.length],
+          lat: placeLat,
+          lng: placeLng,
+          filterTags: [vibe, "Trending"],
+        };
+      });
+
+      if (convertedPlaces.length > 0) {
+        setPlacesList((prev) => {
+          const others = prev.filter((p) => p.city.toLowerCase() !== city.toLowerCase());
+          return [...convertedPlaces, ...others];
+        });
+        setSelectedMapPlace(convertedPlaces[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching nearby places with Places API (New):", error);
+    }
+  };
+
+  // Automatically fetch nearby places for initial location on mount
+  useEffect(() => {
+    if (selectedLocationData.latitude && selectedLocationData.longitude) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchNearbyPlaces(
+        selectedLocationData.latitude,
+        selectedLocationData.longitude,
+        selectedLocationData.city || selectedLocationData.name || "Pune"
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 3) On selecting a location:
   // - Store name + latitude + longitude
   // - Update selected location in app
@@ -1340,12 +1512,15 @@ export default function Home() {
       setIsLocationSheetOpen(false);
 
       // Sync active map place with first spot in the new city if exists
-      const firstPlace = PLACES.find(
+      const firstPlace = placesList.find(
         (p) => p.city.toLowerCase() === city.toLowerCase()
       );
       if (firstPlace) {
         setSelectedMapPlace(firstPlace);
       }
+
+      // Automatically fetch nearby places using Google Places API (New)
+      fetchNearbyPlaces(lat, lng, city);
     };
 
     // If coordinates are already provided (e.g. preset city or reverse geocode), apply immediately
@@ -1580,7 +1755,7 @@ export default function Home() {
   // Only show places where:
   // - place.city === selectedCity
   // - AND matches selected filters (if any)
-  const filteredPlaces = PLACES.filter((place) => {
+  const filteredPlaces = placesList.filter((place) => {
     // 6) Bottom Nav Saved Tab filter
     if (activeNavTab === "saved" && !bookmarkedIds.includes(place.id)) {
       return false;
