@@ -1374,11 +1374,11 @@ export default function Home() {
         {/* ============================================================ */}
         {/* HEADER SECTION                                               */}
         {/* ============================================================ */}
-        <section className="flex flex-col gap-5 sm:gap-6">
-          <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#EAEAEA] pb-5 sm:pb-6">
+        <section className="flex flex-col gap-6">
+          <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#EAEAEA] pb-6">
             {/* Left side: App name (bold, larger) + Location (smaller, lighter text below) */}
             <div className="flex flex-col items-start gap-1 min-w-0">
-              <h1 className="flex items-center gap-2.5 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1A1A1A]">
+              <h1 className="flex items-center gap-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1A1A1A]">
                 {/* Logo: App Icon (Orange tile with magnifying glass and compass needle) */}
                 <svg
                   className="h-[22px] w-[22px] sm:h-6 sm:w-6 shrink-0"
@@ -1568,7 +1568,7 @@ export default function Home() {
 
           {/* 2) FILTERS: Interactive Pills */}
           <div className="w-full flex justify-start sm:justify-center overflow-x-auto no-scrollbar px-1 py-1">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-max mx-auto sm:mx-0">
+            <div className="flex items-center gap-3 min-w-max mx-auto sm:mx-0">
               {FILTER_PILLS.map((pill) => {
                 const isActive = isPillActive(pill);
 
@@ -1671,7 +1671,7 @@ export default function Home() {
               </div>
             ) : activeNavTab === "profile" ? (
               /* 6) Active Nav Tab = "profile" View */
-              <div className="rounded-3xl border border-[#EAEAEA] bg-white p-6 sm:p-8 flex flex-col gap-5 shadow-sm">
+              <div className="rounded-3xl border border-[#EAEAEA] bg-white p-6 sm:p-8 flex flex-col gap-6 shadow-sm">
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F97316] text-white text-xl font-bold shadow-md">
                     RS
@@ -1698,14 +1698,14 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setActiveNavTab("discover")}
-                  className="self-start mt-1 inline-flex items-center gap-1.5 rounded-xl bg-[#F97316] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#EA580C] transition cursor-pointer"
+                  className="self-start mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#F97316] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#EA580C] transition cursor-pointer"
                 >
                   Return to Discovery
                 </button>
               </div>
             ) : (
               /* High-Signal Cards Grid */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-7 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 {filteredPlaces.map((place) => {
                   const isBookmarked = bookmarkedIds.includes(place.id);
                   const crowdStyle = getCrowdBadgeStyle(place.crowd);
@@ -1807,7 +1807,7 @@ export default function Home() {
                             {place.name}
                           </h3>
                           <span
-                            className="shrink-0 font-bold text-xs tracking-wider text-[#525252] bg-[#F4F4F4] px-2.5 py-1 rounded-md border border-[#EAEAEA] self-start ml-2"
+                            className="shrink-0 font-bold text-xs tracking-wider text-[#525252] bg-[#F4F4F4] px-2.5 py-1 rounded-md border border-[#EAEAEA] self-start"
                             title={`Price level: ${place.price}`}
                           >
                             {place.price}
@@ -1815,7 +1815,7 @@ export default function Home() {
                         </div>
 
                         {/* Smart Pills: Crowd Status & Best Time */}
-                        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
                           {/* Crowd Pill */}
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[11px] font-semibold border ${crowdStyle.pill}`}
@@ -1849,7 +1849,7 @@ export default function Home() {
                         </p>
 
                         {/* Bottom Row: Vibe + Action Buttons */}
-                        <div className="mt-4 pt-3.5 border-t border-[#EAEAEA] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="mt-4 pt-4 border-t border-[#EAEAEA] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           {/* Vibe Line */}
                           <div className="text-xs text-[#525252]">
                             <span className="font-semibold text-[#1A1A1A] mr-1.5">Vibe:</span>
@@ -1862,7 +1862,7 @@ export default function Home() {
                             <button
                               type="button"
                               onClick={(e) => handleOpenMapWithPlace(place, e)}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAEAEA] bg-[#F7F7F7] px-3 py-1.5 text-xs font-semibold text-[#1A1A1A] hover:bg-[#F97316]/10 hover:border-[#F97316]/50 hover:text-[#EA580C] transition-all duration-200 cursor-pointer shadow-xs"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAEAEA] bg-[#F7F7F7] px-3.5 py-1.5 text-xs font-semibold text-[#1A1A1A] hover:bg-[#F97316]/10 hover:border-[#F97316]/50 hover:text-[#EA580C] transition-all duration-200 cursor-pointer shadow-xs"
                             >
                               <svg
                                 className="h-3.5 w-3.5 text-[#525252]"
@@ -2158,7 +2158,7 @@ export default function Home() {
           onClick={() => setSelectedModalPlace(null)}
         >
           <div
-            className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl border border-[#EAEAEA] p-6 sm:p-7 flex flex-col gap-4 text-left"
+            className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl border border-[#EAEAEA] p-6 sm:p-8 flex flex-col gap-4 text-left"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
@@ -2212,7 +2212,7 @@ export default function Home() {
               <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#1A1A1A]">
                 {selectedModalPlace.name}
               </h2>
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold border ${
                     getCrowdBadgeStyle(selectedModalPlace.crowd).pill
@@ -2229,13 +2229,13 @@ export default function Home() {
                   {selectedModalPlace.bestTime}
                 </span>
               </div>
-              <p className="mt-3.5 text-sm leading-relaxed text-[#525252]">
+              <p className="mt-3 text-sm leading-relaxed text-[#525252]">
                 {selectedModalPlace.description}
               </p>
             </div>
 
             {/* Modal Vibe & Actions */}
-            <div className="mt-2 pt-4 border-t border-[#EAEAEA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="mt-4 pt-4 border-t border-[#EAEAEA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="text-xs text-[#525252]">
                 <span className="font-semibold text-[#1A1A1A] mr-1.5">Vibe:</span>
                 <span>{selectedModalPlace.vibe}</span>
