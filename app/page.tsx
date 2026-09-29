@@ -926,6 +926,30 @@ interface SelectedLocationData {
   city: string;
 }
 
+interface GoogleAddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
+
+interface GoogleGeocodeResult {
+  address_components: GoogleAddressComponent[];
+  formatted_address?: string;
+}
+
+interface WindowWithGoogle extends Window {
+  google?: {
+    maps?: {
+      Geocoder?: new () => {
+        geocode: (
+          request: { location: { lat: number; lng: number } },
+          callback: (results: GoogleGeocodeResult[] | null, status: string) => void
+        ) => void;
+      };
+    };
+  };
+}
+
 
 const CITIES: CityItem[] = [
   {
@@ -1208,23 +1232,120 @@ export default function Home() {
 
   const handleUseCurrentLocation = () => {
     setIsDetectingLocation(true);
-    const puneCity = CITIES.find((c) => c.name === "Pune") || CITIES[0];
-    if (typeof navigator !== "undefined" && "geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          handleSelectCity(puneCity);
-          setIsDetectingLocation(false);
-        },
-        () => {
-          handleSelectCity(puneCity);
-          setIsDetectingLocation(false);
-        },
-        { timeout: 2500 }
-      );
-    } else {
-      handleSelectCity(puneCity);
+
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      console.error("Geolocation API is not supported by this browser.");
       setIsDetectingLocation(false);
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+
+          if (!apiKey) {
+            console.error("Google Maps API key is not configured.");
+            setIsDetectingLocation(false);
+            return;
+          }
+
+          // Ensure Google Maps JavaScript SDK is loaded
+          const win = window as unknown as WindowWithGoogle;
+          if (!win.google?.maps?.Geocoder) {
+            await new Promise<void>((resolve, reject) => {
+              const scriptId = "google-maps-js-sdk";
+              let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+              if (!script) {
+                script = document.createElement("script");
+                script.id = scriptId;
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+                script.async = true;
+                document.head.appendChild(script);
+              }
+              script.addEventListener("load", () => resolve(), { once: true });
+              script.addEventListener("error", (e) => reject(e), { once: true });
+            });
+          }
+
+          if (!win.google?.maps?.Geocoder) {
+            throw new Error("Google Maps JavaScript API Geocoder is unavailable.");
+          }
+
+          // 2. Use ONLY Google Maps JavaScript API: new google.maps.Geocoder()
+          const geocoder = new win.google.maps.Geocoder();
+          const results = await new Promise<GoogleGeocodeResult[]>((resolve, reject) => {
+            geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (res, status) => {
+              if (status === "OK" && res && res.length > 0) {
+                resolve(res);
+              } else {
+                reject(new Error(`Google Maps Geocoder failed with status: ${status}`));
+              }
+            });
+          });
+
+          // 3. Extract locality (city), administrative_area_level_1 (state), country
+          let locality = "";
+          let state = "";
+          let country = "";
+
+          for (const result of results) {
+            if (!result.address_components) continue;
+            for (const comp of result.address_components) {
+              const types = comp.types || [];
+              if (!locality && (types.includes("locality") || types.includes("postal_town"))) {
+                locality = comp.long_name || comp.short_name;
+              }
+              if (!state && types.includes("administrative_area_level_1")) {
+                state = comp.short_name || comp.long_name;
+              }
+              if (!country && types.includes("country")) {
+                country = comp.short_name || comp.long_name;
+              }
+            }
+            if (!locality) {
+              const admin2 = result.address_components.find((c) =>
+                c.types?.includes("administrative_area_level_2")
+              );
+              if (admin2?.long_name) {
+                locality = admin2.long_name;
+              }
+            }
+            if (locality && state) break;
+          }
+
+          const detectedCity = locality || state || country || "Pune";
+          const formattedLocation = state
+            ? `${detectedCity}, ${state}`
+            : country
+            ? `${detectedCity}, ${country}`
+            : detectedCity;
+
+          // 4. Update existing state ONLY: selectedCity, selectedLocation, selectedLocationData
+          handleSelectLocation({
+            name: detectedCity,
+            fullName: formattedLocation,
+            latitude,
+            longitude,
+            city: detectedCity,
+          });
+        } catch (err) {
+          console.error("Location detection error:", err);
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      (geoError) => {
+        console.error("Geolocation error:", geoError.message || geoError);
+        setIsDetectingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    );
   };
 
   // 5) Persist saved items using localStorage
