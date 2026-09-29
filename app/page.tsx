@@ -1379,25 +1379,34 @@ export default function Home() {
             {/* Left side: App name (bold, larger) + Location (smaller, lighter text below) */}
             <div className="flex flex-col items-start gap-1 min-w-0">
               <h1 className="flex items-center gap-2.5 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1A1A1A]">
-                {/* Minimal Brand Logo */}
+                {/* Logo: App Icon (Orange tile with magnifying glass and compass needle) */}
                 <svg
                   className="h-[22px] w-[22px] sm:h-6 sm:w-6 shrink-0"
-                  viewBox="0 0 24 24"
+                  viewBox="0 0 100 100"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                   aria-hidden="true"
                 >
-                  {/* Primary: Modern Pin Silhouette in signature orange */}
+                  <rect width="100" height="100" rx="24" fill="#FF5B00" />
+                  <circle
+                    cx="46"
+                    cy="46"
+                    r="25"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="6.5"
+                  />
+                  <path
+                    d="M63.5 63.5L74 74"
+                    stroke="white"
+                    strokeWidth="6.5"
+                    strokeLinecap="round"
+                  />
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
-                    d="M12 2C7.858 2 4.5 5.358 4.5 9.5C4.5 14.65 11.15 21.35 11.45 21.65C11.75 21.95 12.25 21.95 12.55 21.65C12.85 21.35 19.5 14.65 19.5 9.5C19.5 5.358 16.142 2 12 2ZM12 14C9.515 14 7.5 11.985 7.5 9.5C7.5 7.015 9.515 5 12 5C14.485 5 16.5 7.015 16.5 9.5C16.5 11.985 14.485 14 12 14Z"
-                    fill="#FF5B00"
-                  />
-                  {/* Secondary: Precision Discovery Marker in complementary deep charcoal */}
-                  <path
-                    d="M12 6.2L13.1 8.5L15.3 9.5L13.1 10.5L12 12.8L10.9 10.5L8.7 9.5L10.9 8.5L12 6.2Z"
-                    fill="#1E1B26"
+                    fill="white"
+                    d="M62 30L52.5 52.5L30 62L39.5 39.5Z M46 39.5A6.5 6.5 0 1 0 46 52.5A6.5 6.5 0 1 0 46 39.5Z"
                   />
                 </svg>
                 <span>Nearby Discovery</span>
