@@ -1375,9 +1375,9 @@ export default function Home() {
         {/* HEADER SECTION                                               */}
         {/* ============================================================ */}
         <section className="flex flex-col gap-6">
-          <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#EAEAEA] pb-6">
-            {/* Left side: App name (bold, larger) + Location (smaller, lighter text below) */}
-            <div className="flex flex-col items-start gap-1 min-w-0">
+          <header className="relative flex items-center justify-between border-b border-[#EAEAEA] pb-6">
+            {/* Left side: Logo + App name */}
+            <div className="flex items-center min-w-0">
               <h1 className="flex items-center gap-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1A1A1A]">
                 {/* Logo: App Icon (Orange tile with magnifying glass and compass needle) */}
                 <svg
@@ -1411,6 +1411,7 @@ export default function Home() {
                 </svg>
                 <span>Nearby Discovery</span>
               </h1>
+              {/* Center: City selector (visually centered across header) */}
               <button
                 type="button"
                 onClick={() => {
@@ -1419,7 +1420,7 @@ export default function Home() {
                   setIsLoadingLocations(false);
                   setIsLocationSheetOpen(true);
                 }}
-                className="group inline-flex items-center gap-1.5 text-xs sm:text-sm text-[#525252] hover:text-[#F97316] transition-colors cursor-pointer text-left py-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F97316]/40 rounded-md"
+                className="group absolute left-1/2 -translate-x-1/2 top-[calc(50%-12px)] -translate-y-1/2 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm text-[#525252] hover:text-[#F97316] transition-colors cursor-pointer text-center py-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F97316]/40 rounded-md whitespace-nowrap"
                 aria-label={`Select location, currently ${selectedLocation}`}
                 aria-haspopup="dialog"
                 aria-expanded={isLocationSheetOpen}
@@ -1463,8 +1464,8 @@ export default function Home() {
               </button>
             </div>
 
-            {/* 3) LIST ↔ MAP TOGGLE */}
-            <div className="inline-flex shrink-0 self-start sm:self-auto items-center p-1 rounded-full bg-[#F2F2F2] border border-[#EAEAEA] shadow-inner">
+            {/* Right side: 3) LIST ↔ MAP TOGGLE */}
+            <div className="inline-flex shrink-0 items-center p-1 rounded-full bg-[#F2F2F2] border border-[#EAEAEA] shadow-inner">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
