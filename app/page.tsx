@@ -1945,10 +1945,10 @@ export default function Home() {
         {/* HEADER SECTION                                               */}
         {/* ============================================================ */}
         <section className="flex flex-col gap-6">
-          <header className="relative flex items-center justify-between border-b border-[#EAEAEA] pb-6">
+          <header className="relative grid grid-cols-[1fr_auto] items-center gap-2 sm:flex sm:items-center sm:justify-between sm:gap-0 border-b border-[#EAEAEA] pb-6">
             {/* Left side: Logo + App name */}
-            <div className="flex items-center min-w-0">
-              <h1 className="flex items-center gap-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1A1A1A]">
+            <div className="contents sm:flex sm:items-center sm:min-w-0">
+              <h1 className="col-span-2 flex items-center gap-3 text-xl sm:text-3xl font-extrabold tracking-tight text-[#1A1A1A] whitespace-nowrap">
                 {/* Logo: App Icon (Orange tile with magnifying glass and compass needle) */}
                 <svg
                   className="h-[22px] w-[22px] sm:h-6 sm:w-6 shrink-0"
@@ -1990,7 +1990,7 @@ export default function Home() {
                   setIsLoadingLocations(false);
                   setIsLocationSheetOpen(true);
                 }}
-                className="group absolute left-1/2 -translate-x-1/2 top-[calc(50%-12px)] -translate-y-1/2 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm text-[#525252] hover:text-[#F97316] transition-colors cursor-pointer text-center py-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F97316]/40 rounded-md whitespace-nowrap"
+                className="group relative sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:top-[calc(50%-12px)] sm:-translate-y-1/2 justify-self-start inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm text-[#525252] hover:text-[#F97316] transition-colors cursor-pointer text-center py-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F97316]/40 rounded-md whitespace-nowrap"
                 aria-label={`Select location, currently ${selectedLocation}`}
                 aria-haspopup="dialog"
                 aria-expanded={isLocationSheetOpen}
@@ -2035,7 +2035,7 @@ export default function Home() {
             </div>
 
             {/* Right side: 3) LIST ↔ MAP TOGGLE */}
-            <div className="inline-flex shrink-0 items-center p-1 rounded-full bg-[#F2F2F2] border border-[#EAEAEA] shadow-inner">
+            <div className="justify-self-end inline-flex shrink-0 items-center p-1 rounded-full bg-[#F2F2F2] border border-[#EAEAEA] shadow-inner">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
