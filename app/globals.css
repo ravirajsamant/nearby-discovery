@@ -50,3 +50,46 @@ body {
   animation: fadeInBackdrop 0.2s ease-out forwards;
 }
 
+@media (max-width: 639.98px) {
+  nav[aria-label*="Bottom"] {
+    bottom: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  nav[aria-label*="Bottom"] > div {
+    display: flex;
+    width: 100%;
+    max-width: 320px;
+    gap: 4px;
+    padding: 5px;
+  }
+
+  nav[aria-label*="Bottom"] button {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 0;
+    position: relative;
+    gap: 0;
+  }
+
+  /* Hide text labels on mobile (Discover, Saved, Activity, Profile) */
+  nav[aria-label*="Bottom"] button > span:first-of-type {
+    display: none;
+  }
+
+  /* Keep Saved notification badge visible and anchored to the icon */
+  nav[aria-label*="Bottom"] button > span:last-of-type:not(:first-of-type) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 4px;
+    left: calc(50% + 4px);
+    margin-left: 0;
+    line-height: 1;
+  }
+}
+
