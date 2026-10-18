@@ -1124,8 +1124,10 @@ const ensureGoogleMapsLoaded = async (apiKey: string): Promise<void> => {
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
-  const [placeSearchQuery, setPlaceSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<number[]>([1, 4]);
   const [selectedModalPlace, setSelectedModalPlace] = useState<Place | null>(null);
   const [selectedMapPlace, setSelectedMapPlace] = useState<Place | null>(PLACES[0]);
@@ -1136,16 +1138,35 @@ export default function Home() {
   // Debounce search query by 300ms for smooth, flicker-free filtering
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchQuery(placeSearchQuery);
+      setDebouncedSearchQuery(searchQuery);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [placeSearchQuery]);
+  }, [searchQuery]);
 
   const handleClearSearch = () => {
-    setPlaceSearchQuery("");
+    setSearchQuery("");
     setDebouncedSearchQuery("");
+    setLocationSuggestions([]);
+    setIsSearchDropdownOpen(false);
   };
+
+  // Close search dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsSearchDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // 3) Stored selected location data: name + latitude + longitude
   const [selectedLocationData, setSelectedLocationData] = useState<SelectedLocationData>({
@@ -1158,11 +1179,9 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState("Pune");
   const [selectedLocation, setSelectedLocation] = useState("Pune, MH-12");
 
-  // Location search input & Mapbox API suggestions state
-  const [searchQuery, setSearchQuery] = useState("");
+  // Autocomplete location suggestions state
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
-  const [isLocationSheetOpen, setIsLocationSheetOpen] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   // Filter states: selectedVibe, selectedCrowd, selectedTag
@@ -1606,13 +1625,12 @@ export default function Home() {
 
       // Reset queries & suggestions
       setSearchQuery("");
+      setDebouncedSearchQuery("");
       setLocationSuggestions([]);
       setIsLoadingLocations(false);
-      setPlaceSearchQuery("");
-      setDebouncedSearchQuery("");
 
-      // Close modal
-      setIsLocationSheetOpen(false);
+      // Close dropdown
+      setIsSearchDropdownOpen(false);
 
       // Sync active map place with first spot in the new city if exists
       const firstPlace = placesList.find(
@@ -1673,25 +1691,87 @@ export default function Home() {
     });
   };
 
-  // Keyboard navigation & scroll locking for bottom sheet
-  useEffect(() => {
-    if (!isLocationSheetOpen) return;
+  // Resolve custom freeform location or landmark and set as discovery location
+  const handleResolveCustomLocation = async (queryText: string) => {
+    const trimmed = queryText.trim();
+    if (!trimmed) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setIsLocationSheetOpen(false);
+    // 1. Check preset cities
+    const matchedCity = CITIES.find(
+      (c) =>
+        c.name.toLowerCase() === trimmed.toLowerCase() ||
+        c.badge.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (matchedCity) {
+      handleSelectCity(matchedCity);
+      return;
+    }
+
+    // 2. Check if top location suggestion matches or is available
+    if (locationSuggestions.length > 0) {
+      handleSelectLocation(locationSuggestions[0]);
+      return;
+    }
+
+    // 3. Geocode freeform custom location or landmark using Google Maps Geocoder
+    try {
+      setIsLoadingLocations(true);
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+      if (!apiKey) {
+        console.warn("Google Maps API key is not configured.");
+        setIsLoadingLocations(false);
+        return;
       }
-    };
 
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
+      await ensureGoogleMapsLoaded(apiKey);
+      const win = typeof window !== "undefined" ? (window as unknown as WindowWithGoogle) : null;
+      if (!win?.google?.maps?.Geocoder) {
+        throw new Error("Google Maps Geocoder is not available.");
+      }
 
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isLocationSheetOpen]);
+      const geocoder = new win.google.maps.Geocoder();
+      geocoder.geocode({ address: trimmed }, (results, status) => {
+        setIsLoadingLocations(false);
+        if (status === "OK" && results && results[0]?.geometry?.location) {
+          const loc = results[0].geometry.location;
+          const lat = typeof loc.lat === "function" ? loc.lat() : Number(loc.lat);
+          const lng = typeof loc.lng === "function" ? loc.lng() : Number(loc.lng);
+
+          let locality = "";
+          let state = "";
+          let country = "";
+          if (results[0].address_components) {
+            for (const comp of results[0].address_components) {
+              const types = comp.types || [];
+              if (!locality && (types.includes("locality") || types.includes("postal_town"))) {
+                locality = comp.long_name;
+              }
+              if (!state && types.includes("administrative_area_level_1")) {
+                state = comp.short_name || comp.long_name;
+              }
+              if (!country && types.includes("country")) {
+                country = comp.short_name || comp.long_name;
+              }
+            }
+          }
+
+          const resolvedCityName = locality || state || trimmed;
+          const formattedLocation = results[0].formatted_address || (state ? `${resolvedCityName}, ${state}` : resolvedCityName);
+
+          handleSelectLocation({
+            name: trimmed,
+            fullName: formattedLocation,
+            latitude: lat,
+            longitude: lng,
+            city: resolvedCityName,
+          });
+        }
+      });
+    } catch (err) {
+      console.error("Custom location resolution error:", err);
+      setIsLoadingLocations(false);
+    }
+  };
 
   const handleUseCurrentLocation = () => {
     setIsDetectingLocation(true);
@@ -1945,10 +2025,10 @@ export default function Home() {
         {/* HEADER SECTION                                               */}
         {/* ============================================================ */}
         <section className="flex flex-col gap-6">
-          <header className="relative grid grid-cols-[1fr_auto] items-center gap-2 sm:flex sm:items-center sm:justify-between sm:gap-0 border-b border-[#EAEAEA] pb-6">
+          <header className="flex items-center justify-between border-b border-[#EAEAEA] pb-6">
             {/* Left side: Logo + App name */}
-            <div className="contents sm:flex sm:items-center sm:min-w-0">
-              <h1 className="col-span-2 flex items-center gap-3 text-xl sm:text-3xl font-extrabold tracking-tight text-[#1A1A1A] whitespace-nowrap">
+            <div className="flex items-center min-w-0">
+              <h1 className="flex items-center gap-3 text-xl sm:text-3xl font-extrabold tracking-tight text-[#1A1A1A] whitespace-nowrap">
                 {/* Logo: App Icon (Orange tile with magnifying glass and compass needle) */}
                 <svg
                   className="h-[22px] w-[22px] sm:h-6 sm:w-6 shrink-0"
@@ -1981,61 +2061,10 @@ export default function Home() {
                 </svg>
                 <span>Nearby Discovery</span>
               </h1>
-              {/* Center: City selector (visually centered across header) */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setLocationSuggestions([]);
-                  setIsLoadingLocations(false);
-                  setIsLocationSheetOpen(true);
-                }}
-                className="group relative sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:top-[calc(50%-12px)] sm:-translate-y-1/2 justify-self-start inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm text-[#525252] hover:text-[#F97316] transition-colors cursor-pointer text-center py-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F97316]/40 rounded-md whitespace-nowrap"
-                aria-label={`Select location, currently ${selectedLocation}`}
-                aria-haspopup="dialog"
-                aria-expanded={isLocationSheetOpen}
-              >
-                <svg
-                  className="h-4 w-4 shrink-0 text-[#F97316] transition-transform duration-200 group-hover:scale-110"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                <span className="font-medium text-[#4A4A4A] group-hover:text-[#F97316] transition-colors">
-                  {selectedLocation}
-                </span>
-                <svg
-                  className="h-3.5 w-3.5 shrink-0 text-[#8A8A8A] transition-transform duration-200 group-hover:translate-y-0.5 group-hover:text-[#F97316]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.2}
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
             </div>
 
             {/* Right side: 3) LIST ↔ MAP TOGGLE */}
-            <div className="justify-self-end inline-flex shrink-0 items-center p-1 rounded-full bg-[#F2F2F2] border border-[#EAEAEA] shadow-inner">
+            <div className="inline-flex shrink-0 items-center p-1 rounded-full bg-[#F2F2F2] border border-[#EAEAEA] shadow-inner">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
@@ -2087,9 +2116,10 @@ export default function Home() {
             </div>
           </header>
 
-          {/* 7) SEARCH: Filters places by name or category */}
-          <div className="w-full md:max-w-2xl md:mx-auto">
+          {/* UNIFIED SEARCH BAR */}
+          <div ref={searchContainerRef} className="relative w-full md:max-w-2xl md:mx-auto">
             <div className="relative flex items-center">
+              {/* Left icon: Search magnifying glass */}
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#8A8A8A]">
                 <svg
                   className="h-4 w-4"
@@ -2105,36 +2135,324 @@ export default function Home() {
                   />
                 </svg>
               </div>
+
+              {/* Input: Exact placeholder "Search anything" */}
               <input
                 type="text"
-                value={placeSearchQuery}
-                onChange={(e) => setPlaceSearchQuery(e.target.value)}
-                placeholder="Search by name, vibe, or category (e.g. cafes, heritage, markets)"
-                className="w-full rounded-full border border-[#EAEAEA] bg-white py-3.5 pl-11 pr-11 text-sm text-[#1A1A1A] placeholder-[#8A8A8A] shadow-[0_2px_8px_rgba(0,0,0,0.03)] outline-none transition duration-200 focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/10"
+                value={searchQuery}
+                onFocus={() => setIsSearchDropdownOpen(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchDropdownOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const trimmed = searchQuery.trim();
+                    if (!trimmed) return;
+
+                    // Match preset city
+                    const matchedCity = CITIES.find(
+                      (c) =>
+                        c.name.toLowerCase() === trimmed.toLowerCase() ||
+                        c.badge.toLowerCase() === trimmed.toLowerCase()
+                    );
+                    if (matchedCity) {
+                      handleSelectCity(matchedCity);
+                      setIsSearchDropdownOpen(false);
+                      return;
+                    }
+
+                    // If user typed a location suggestion and no local places match
+                    if (filteredPlaces.length === 0 && locationSuggestions.length > 0) {
+                      handleSelectLocation(locationSuggestions[0]);
+                      setIsSearchDropdownOpen(false);
+                      return;
+                    }
+
+                    // If local places match, keep place query active and close dropdown
+                    if (filteredPlaces.length > 0) {
+                      setIsSearchDropdownOpen(false);
+                      return;
+                    }
+
+                    // Otherwise resolve custom location or landmark
+                    handleResolveCustomLocation(trimmed);
+                    setIsSearchDropdownOpen(false);
+                  } else if (e.key === "Escape") {
+                    setIsSearchDropdownOpen(false);
+                  }
+                }}
+                placeholder="Search anything"
+                className="w-full rounded-full border border-[#EAEAEA] bg-white py-3.5 pl-11 pr-24 text-sm text-[#1A1A1A] placeholder-[#8A8A8A] shadow-[0_2px_8px_rgba(0,0,0,0.03)] outline-none transition duration-200 focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/10"
+                aria-label="Search anything"
+                aria-autocomplete="list"
               />
-              {placeSearchQuery && (
+
+              {/* Right Action Icons: Loading / Clear / Current Location */}
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 gap-1">
+                {isLoadingLocations && (
+                  <div className="flex items-center px-1 text-[#F97316]">
+                    <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                  </div>
+                )}
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F2F2F2] transition cursor-pointer"
+                    title="Clear search"
+                    aria-label="Clear search"
+                  >
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={handleClearSearch}
-                  className="absolute inset-y-0 right-0 flex items-center pr-4 text-[#8A8A8A] hover:text-[#F97316] transition-colors cursor-pointer"
+                  onClick={handleUseCurrentLocation}
+                  disabled={isDetectingLocation}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#525252] hover:text-[#F97316] hover:bg-[#F97316]/10 transition cursor-pointer disabled:opacity-50"
+                  title="Use current location"
+                  aria-label="Use current location"
                 >
-                  <span className="sr-only">Clear search</span>
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  {isDetectingLocation ? (
+                    <svg
+                      className="animate-spin h-4 w-4 text-[#F97316]"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <circle cx="12" cy="12" r="3" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 2v3m0 14v3M2 12h3m14 0h3"
+                      />
+                    </svg>
+                  )}
                 </button>
-              )}
+              </div>
             </div>
+
+            {/* Dropdown Suggestions Panel */}
+            {isSearchDropdownOpen && (
+              <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-2xl sm:rounded-3xl border border-[#EAEAEA] bg-white shadow-[0_12px_36px_rgba(0,0,0,0.12)] p-3 sm:p-4 max-h-[400px] overflow-y-auto flex flex-col gap-2.5 text-left">
+                {/* 1. Quick Action: Use Current Location */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleUseCurrentLocation();
+                    setIsSearchDropdownOpen(false);
+                  }}
+                  disabled={isDetectingLocation}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-[#F97316]/8 hover:bg-[#F97316] text-[#F97316] hover:text-white border border-[#F97316]/20 transition-all duration-150 cursor-pointer text-left group"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white group-hover:bg-white/20 border border-[#F97316]/20 group-hover:border-transparent transition-colors">
+                    {isDetectingLocation ? (
+                      <svg className="animate-spin h-4 w-4 text-[#F97316] group-hover:text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4 text-[#F97316] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <circle cx="12" cy="12" r="3" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v3m0 14v3M2 12h3m14 0h3" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs sm:text-sm font-bold block truncate">
+                      {isDetectingLocation ? "Detecting location..." : "Use current location"}
+                    </span>
+                    <span className="text-[11px] text-[#7A7A7A] group-hover:text-white/80 block truncate">
+                      Find spots and landmarks near you
+                    </span>
+                  </div>
+                </button>
+
+                {/* 2. Empty query: Show Suggested Cities */}
+                {!searchQuery.trim() && (
+                  <div className="flex flex-col gap-1 pt-1 border-t border-[#F0F0F0]">
+                    <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8A8A8A] px-2 py-1">
+                      Suggested Cities
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                      {CITIES.map((city) => {
+                        const isSelected = selectedCity.toLowerCase() === city.name.toLowerCase();
+                        return (
+                          <button
+                            key={city.id}
+                            type="button"
+                            onClick={() => {
+                              handleSelectCity(city);
+                              setIsSearchDropdownOpen(false);
+                            }}
+                            className={`flex items-center justify-between p-2 rounded-xl transition cursor-pointer text-left ${
+                              isSelected
+                                ? "bg-[#F97316]/10 text-[#F97316] font-semibold"
+                                : "hover:bg-[#F7F7F7] text-[#1A1A1A]"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <svg className="h-3.5 w-3.5 shrink-0 text-[#8A8A8A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              </svg>
+                              <span className="text-xs font-medium truncate">{city.name}</span>
+                            </div>
+                            <span className="text-[10px] text-[#8A8A8A] font-mono">{city.badge}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. With query: Show Location & Landmark Suggestions */}
+                {searchQuery.trim() && locationSuggestions.length > 0 && (
+                  <div className="flex flex-col gap-1 pt-1 border-t border-[#F0F0F0]">
+                    <div className="flex items-center justify-between px-2 py-1">
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8A8A8A]">
+                        Cities, Locations & Landmarks
+                      </span>
+                      <span className="text-[10px] text-[#F97316] font-semibold">
+                        {locationSuggestions.length} found
+                      </span>
+                    </div>
+                    {locationSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion.id}
+                        type="button"
+                        onClick={() => {
+                          handleSelectLocation(suggestion);
+                          setIsSearchDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#F97316]/8 transition cursor-pointer text-left group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#F5F5F5] group-hover:bg-[#F97316] group-hover:text-white text-[#7A7A7A] transition-colors">
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs sm:text-sm font-semibold text-[#1A1A1A] group-hover:text-[#F97316] truncate">
+                                {suggestion.name}
+                              </span>
+                              <span className="rounded bg-[#EAEAEA] px-1 py-0.2 text-[9px] font-semibold text-[#525252]">
+                                {suggestion.placeType}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-[#7A7A7A] truncate">
+                              {suggestion.contextText || suggestion.fullName}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-semibold text-[#F97316] shrink-0 pl-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Discover &rarr;
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* 4. With query: Matching places in current discovery list */}
+                {searchQuery.trim() && filteredPlaces.length > 0 && (
+                  <div className="flex flex-col gap-1 pt-1 border-t border-[#F0F0F0]">
+                    <div className="flex items-center justify-between px-2 py-1">
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8A8A8A]">
+                        Places in {selectedCity}
+                      </span>
+                      <span className="text-[10px] text-[#525252]">
+                        {filteredPlaces.length} matching
+                      </span>
+                    </div>
+                    {filteredPlaces.slice(0, 3).map((place) => (
+                      <button
+                        key={place.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedModalPlace(place);
+                          setIsSearchDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#F5F5F5] transition cursor-pointer text-left"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-[#EAEAEA]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={place.image} alt={place.name} className="h-full w-full object-cover" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs sm:text-sm font-semibold text-[#1A1A1A] truncate block">
+                              {place.name}
+                            </span>
+                            <span className="text-[10px] text-[#F97316] font-semibold uppercase tracking-wider truncate block">
+                              {place.category} &bull; {place.distance}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-medium text-[#525252] shrink-0 pl-2">
+                          View details
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* 5. With query: Option to resolve custom location or landmark directly */}
+                {searchQuery.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleResolveCustomLocation(searchQuery);
+                      setIsSearchDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#525252] hover:text-[#F97316] hover:bg-[#F97316]/5 transition cursor-pointer border-t border-[#F0F0F0]"
+                  >
+                    <svg className="h-3.5 w-3.5 text-[#F97316] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                    <span className="truncate">Set &ldquo;{searchQuery.trim()}&rdquo; as discovery location</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 2) FILTERS: Interactive Pills */}
@@ -2189,7 +2507,7 @@ export default function Home() {
                 <p className="text-xs text-[#525252] font-normal mt-0.5">
                   {debouncedSearchQuery.trim()
                     ? `Matching name, category, or vibe in ${selectedCity}`
-                    : "Curated by proximity and local character"}
+                    : `Curated by proximity and local character • ${selectedLocation}`}
                 </p>
               </div>
 
@@ -2861,473 +3179,6 @@ export default function Home() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* LOCATION SELECTOR BOTTOM SHEET MODAL                         */}
-      {/* ============================================================ */}
-      {isLocationSheetOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="location-sheet-title"
-          className="fixed inset-0 z-50 flex items-end justify-center"
-        >
-          {/* Backdrop overlay */}
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs animate-backdrop-fade-in"
-            onClick={() => setIsLocationSheetOpen(false)}
-            aria-hidden="true"
-          />
-
-          {/* Bottom Sheet Panel */}
-          <div
-            className="relative z-10 w-full max-w-lg rounded-t-[28px] sm:rounded-t-[32px] bg-white border-t border-[#EAEAEA] shadow-[0_-12px_40px_rgba(0,0,0,0.18)] max-h-[85vh] flex flex-col text-left overflow-hidden animate-sheet-slide-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Top Pull Bar / Drag Handle */}
-            <div className="pt-3 pb-1 flex justify-center shrink-0">
-              <div className="h-1.5 w-12 rounded-full bg-[#E0E0E0]" />
-            </div>
-
-            {/* Header: Title + Close Button */}
-            <div className="px-5 sm:px-6 pt-2 pb-4 flex items-center justify-between border-b border-[#F0F0F0]">
-              <div>
-                <h3
-                  id="location-sheet-title"
-                  className="text-lg sm:text-xl font-bold text-[#1A1A1A] tracking-tight"
-                >
-                  Select Location
-                </h3>
-                <p className="text-xs text-[#7A7A7A] mt-0.5">
-                  Find spots and curated places in your city
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsLocationSheetOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F4F4F4] text-[#525252] hover:bg-[#EAEAEA] hover:text-[#1A1A1A] transition cursor-pointer"
-                aria-label="Close location selector"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Sheet Scrollable Content */}
-            <div className="px-5 sm:px-6 py-4 overflow-y-auto flex flex-col gap-4">
-              {/* Search input */}
-              <div className="relative flex items-center">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#8A8A8A]">
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSearchQuery(val);
-                    if (!val.trim()) {
-                      setLocationSuggestions([]);
-                      setIsLoadingLocations(false);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && locationSuggestions.length > 0) {
-                      handleSelectLocation(locationSuggestions[0]);
-                    } else if (e.key === "Escape") {
-                      setSearchQuery("");
-                      setLocationSuggestions([]);
-                      setIsLoadingLocations(false);
-                    }
-                  }}
-                  placeholder="Search city or area"
-                  className="w-full rounded-2xl border border-[#EAEAEA] bg-[#FAFAFA] py-3 pl-10 pr-10 text-sm text-[#1A1A1A] placeholder-[#8A8A8A] outline-none transition focus:border-[#F97316] focus:bg-white focus:ring-4 focus:ring-[#F97316]/10"
-                />
-                {isLoadingLocations && (
-                  <div className="absolute inset-y-0 right-9 flex items-center pointer-events-none">
-                    <svg
-                      className="animate-spin h-4 w-4 text-[#F97316]"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8H4z"
-                      />
-                    </svg>
-                  </div>
-                )}
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setLocationSuggestions([]);
-                      setIsLoadingLocations(false);
-                    }}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#8A8A8A] hover:text-[#F97316] transition-colors cursor-pointer"
-                  >
-                    <span className="sr-only">Clear search</span>
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
-              {/* Conditional Display: Search Results vs Default Suggested Cities */}
-              {searchQuery.trim().length > 0 ? (
-                /* 1) SEARCH RESULTS (Suggested Cities hidden) */
-                <div className="flex flex-col gap-2 pt-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#8A8A8A]">
-                      {isLoadingLocations ? "Searching locations..." : "Search results"}
-                    </span>
-                    {!isLoadingLocations && locationSuggestions.length > 0 && (
-                      <span className="text-xs text-[#F97316] font-semibold">
-                        {locationSuggestions.length} {locationSuggestions.length === 1 ? "location" : "locations"} found
-                      </span>
-                    )}
-                  </div>
-
-                  {/* 5) Loading state while fetching */}
-                  {isLoadingLocations ? (
-                    <div className="flex flex-col gap-1.5 py-1">
-                      {[1, 2, 3].map((n) => (
-                        <div
-                          key={n}
-                          className="w-full flex items-center justify-between p-3 rounded-2xl border border-[#EAEAEA] bg-[#FAFAFA]"
-                        >
-                          <div className="flex items-center gap-3 min-w-0 w-full animate-pulse">
-                            <div className="h-9 w-9 shrink-0 rounded-xl bg-[#EAEAEA]" />
-                            <div className="flex flex-col gap-1.5 w-3/4">
-                              <div className="h-3.5 bg-[#EAEAEA] rounded w-2/5" />
-                              <div className="h-2.5 bg-[#EAEAEA] rounded w-3/5" />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : locationSuggestions.length > 0 ? (
-                    /* 2) Dropdown / list of suggestions from Mapbox Geocoding */
-                    <div className="flex flex-col gap-1.5">
-                      {locationSuggestions.map((suggestion) => {
-                        const isSelected =
-                          selectedLocationData.name.toLowerCase() ===
-                            suggestion.name.toLowerCase() ||
-                          selectedLocation.toLowerCase() ===
-                            suggestion.fullName.toLowerCase();
-
-                        return (
-                          <button
-                            key={suggestion.id}
-                            type="button"
-                            onClick={() => handleSelectLocation(suggestion)}
-                            className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all duration-150 cursor-pointer text-left ${
-                              isSelected
-                                ? "bg-[#F97316]/8 border-[#F97316]/40 shadow-xs"
-                                : "bg-[#FAFAFA] border-[#EAEAEA] hover:border-[#D4D4D4] hover:bg-white"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                                  isSelected
-                                    ? "bg-[#F97316] text-white"
-                                    : "bg-white border border-[#EAEAEA] text-[#525252]"
-                                }`}
-                              >
-                                <svg
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                </svg>
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className={`text-sm font-bold truncate ${
-                                      isSelected ? "text-[#F97316]" : "text-[#1A1A1A]"
-                                    }`}
-                                  >
-                                    {suggestion.name}
-                                  </span>
-                                  <span className="rounded bg-[#EAEAEA] px-1.5 py-0.5 text-[10px] font-semibold text-[#525252]">
-                                    {suggestion.placeType}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-[#7A7A7A] truncate mt-0.5">
-                                  {suggestion.contextText || suggestion.fullName}
-                                </p>
-                              </div>
-                            </div>
-
-                            {isSelected ? (
-                              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F97316] text-white">
-                                <svg
-                                  className="h-3.5 w-3.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={3}
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                                <span className="text-[10px] font-mono text-[#8A8A8A] hidden sm:inline">
-                                  {suggestion.latitude.toFixed(2)}°, {suggestion.longitude.toFixed(2)}°
-                                </span>
-                                <span className="text-xs font-semibold text-[#F97316]">
-                                  Select
-                                </span>
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    /* 6) NO RESULTS FOUND */
-                    <div className="py-10 px-4 text-center rounded-2xl border border-dashed border-[#EAEAEA] bg-[#FAFAFA]/70 my-2">
-                      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#8A8A8A] mb-2.5 border border-[#EAEAEA] shadow-2xs">
-                        <svg
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                      </div>
-                      <p className="text-sm font-bold text-[#1A1A1A]">No cities found</p>
-                      <p className="text-xs text-[#7A7A7A] mt-1 max-w-xs mx-auto">
-                        No matching locations for &ldquo;{searchQuery.trim()}&rdquo;. Try searching for a city, area, or neighborhood.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSearchQuery("");
-                          setLocationSuggestions([]);
-                          setIsLoadingLocations(false);
-                        }}
-                        className="mt-3.5 inline-flex items-center gap-1.5 rounded-xl bg-white border border-[#EAEAEA] px-3.5 py-1.5 text-xs font-semibold text-[#F97316] hover:border-[#F97316]/40 transition cursor-pointer shadow-2xs"
-                      >
-                        View suggested cities
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* 3) EMPTY INPUT: SHOW SUGGESTED CITIES & CURRENT LOCATION */
-                <>
-                  {/* Button: "Use current location" */}
-                  <button
-                    type="button"
-                    onClick={handleUseCurrentLocation}
-                    disabled={isDetectingLocation}
-                    className="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-[#F97316]/10 hover:bg-[#F97316] text-[#F97316] hover:text-white border border-[#F97316]/25 px-4 py-3 text-sm font-semibold transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.99] disabled:opacity-70 group"
-                  >
-                    <svg
-                      className={`h-4 w-4 shrink-0 transition-transform ${
-                        isDetectingLocation ? "animate-spin" : "group-hover:scale-110"
-                      }`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      {isDetectingLocation ? (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      ) : (
-                        <>
-                          <circle cx="12" cy="12" r="3" />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 2v3m0 14v3M2 12h3m14 0h3"
-                          />
-                          <circle cx="12" cy="12" r="7" strokeDasharray="3 3" />
-                        </>
-                      )}
-                    </svg>
-                    <span>
-                      {isDetectingLocation ? "Detecting location..." : "Use current location"}
-                    </span>
-                  </button>
-
-                  {/* Suggested Cities */}
-                  <div className="flex flex-col gap-2 pt-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#8A8A8A]">
-                      Suggested cities
-                    </span>
-
-                    <div className="flex flex-col gap-1.5">
-                      {CITIES.map((city) => {
-                        const isSelected = selectedCity.toLowerCase() === city.name.toLowerCase();
-
-                        return (
-                          <button
-                            key={city.id}
-                            type="button"
-                            onClick={() => handleSelectCity(city)}
-                            className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all duration-150 cursor-pointer text-left ${
-                              isSelected
-                                ? "bg-[#F97316]/8 border-[#F97316]/40 shadow-xs"
-                                : "bg-[#FAFAFA] border-[#EAEAEA] hover:border-[#D4D4D4] hover:bg-white"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                                  isSelected
-                                    ? "bg-[#F97316] text-white"
-                                    : "bg-white border border-[#EAEAEA] text-[#525252]"
-                                }`}
-                              >
-                                <svg
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                </svg>
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className={`text-sm font-bold truncate ${
-                                      isSelected ? "text-[#F97316]" : "text-[#1A1A1A]"
-                                    }`}
-                                  >
-                                    {city.name}
-                                  </span>
-                                  <span className="rounded bg-[#EAEAEA] px-1.5 py-0.5 text-[10px] font-semibold text-[#525252]">
-                                    {city.badge}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-[#7A7A7A] truncate mt-0.5">
-                                  {city.region}
-                                </p>
-                              </div>
-                            </div>
-
-                            {isSelected && (
-                              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F97316] text-white">
-                                <svg
-                                  className="h-3.5 w-3.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={3}
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Bottom safe area spacing */}
-            <div className="h-4 sm:h-5" />
           </div>
         </div>
       )}
