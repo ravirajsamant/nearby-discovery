@@ -781,10 +781,10 @@ function RealLeafletMap({
               display: inline-flex;
               align-items: center;
               gap: 4px;
-              background-color: ${isCurrent ? "#F97316" : "#FFFFFF"};
-              color: ${isCurrent ? "#FFFFFF" : "#1A1A1A"};
-              border: 2px solid ${isCurrent ? "#F97316" : "#EAEAEA"};
-              box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+              background-color: ${isCurrent ? "#1769E0" : "#FFFFFF"};
+              color: ${isCurrent ? "#FFFFFF" : "#172B4D"};
+              border: 2px solid ${isCurrent ? "#1769E0" : "#DCE5EF"};
+              box-shadow: 0 4px 14px rgba(23,43,77,0.18);
               padding: 4px 9px;
               border-radius: 9999px;
               font-family: 'Poppins', sans-serif;
@@ -793,8 +793,8 @@ function RealLeafletMap({
               white-space: nowrap;
             ">
               <span style="
-                background-color: ${isCurrent ? "#FFFFFF" : "#F97316"};
-                color: ${isCurrent ? "#F97316" : "#FFFFFF"};
+                background-color: ${isCurrent ? "#FFFFFF" : "#1769E0"};
+                color: ${isCurrent ? "#1769E0" : "#FFFFFF"};
                 border-radius: 9999px;
                 width: 17px;
                 height: 17px;
@@ -811,7 +811,7 @@ function RealLeafletMap({
               height: 0;
               border-left: 6px solid transparent;
               border-right: 6px solid transparent;
-              border-top: 6px solid ${isCurrent ? "#F97316" : "#FFFFFF"};
+              border-top: 6px solid ${isCurrent ? "#1769E0" : "#FFFFFF"};
               margin: -1px auto 0;
             "></div>
           </div>
@@ -866,14 +866,14 @@ function RealLeafletMap({
   }, []);
 
   return (
-    <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden border border-[#EAEAEA] bg-[#EEF2F6] shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+    <div className="relative w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden border border-[#DCE5EF] bg-[#EEF2F6] shadow-[0_4px_24px_rgba(23,43,77,0.06)]">
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
       {/* Floating Place Preview Card on Map */}
       {selectedPlace && (
         <div className="absolute bottom-5 inset-x-4 sm:inset-x-auto sm:right-6 sm:w-96 z-[500] pointer-events-auto">
-          <div className="rounded-2xl border border-[#EAEAEA] bg-white/95 backdrop-blur-md p-4 shadow-2xl flex items-center gap-3.5">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#F2F2F2]">
+          <div className="rounded-2xl border border-[#DCE5EF] bg-white/95 backdrop-blur-md p-4 shadow-[0_12px_32px_rgba(23,43,77,0.12)] flex items-center gap-3.5">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#F5F8FC]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={selectedPlace.image}
@@ -887,17 +887,17 @@ function RealLeafletMap({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] font-bold text-[#F97316] uppercase tracking-wider truncate">
+                <span className="text-[10px] font-bold text-[#0F8B8D] uppercase tracking-wider truncate">
                   {selectedPlace.category}
                 </span>
-                <span className="text-xs font-semibold text-[#525252]">
+                <span className="text-xs font-semibold text-[#5F6F82]">
                   {selectedPlace.distance}
                 </span>
               </div>
-              <h4 className="text-sm font-bold text-[#1A1A1A] truncate">
+              <h4 className="text-sm font-bold text-[#172B4D] truncate">
                 {selectedPlace.name}
               </h4>
-              <p className="text-[11px] text-[#525252] truncate mt-0.5">
+              <p className="text-[11px] text-[#5F6F82] truncate mt-0.5">
                 {selectedPlace.vibe}
               </p>
             </div>
@@ -905,7 +905,7 @@ function RealLeafletMap({
             <button
               type="button"
               onClick={() => onOpenDetails(selectedPlace)}
-              className="shrink-0 rounded-xl bg-[#F97316] px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#EA580C] transition cursor-pointer"
+              className="shrink-0 rounded-xl bg-[#1769E0] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#1247A8] transition cursor-pointer"
             >
               Details
             </button>
@@ -2018,79 +2018,57 @@ export default function Home() {
     switch (l) {
       case "low":
         return {
-          pill: "bg-emerald-50 text-emerald-700 border-emerald-200/90",
-          dot: "bg-emerald-500",
+          pill: "bg-[#E7F7F1] text-[#16865C] border-[#16865C]/30",
+          dot: "bg-[#16865C]",
         };
       case "medium":
       case "moderate":
         return {
-          pill: "bg-amber-50 text-amber-700 border-amber-200/90",
-          dot: "bg-amber-500",
+          pill: "bg-[#C58A22]/10 text-[#C58A22] border-[#C58A22]/30",
+          dot: "bg-[#C58A22]",
         };
       case "high":
       case "busy":
       default:
         return {
-          pill: "bg-rose-50 text-rose-700 border-rose-200/90",
-          dot: "bg-rose-500",
+          pill: "bg-[#D64545]/10 text-[#D64545] border-[#D64545]/30",
+          dot: "bg-[#D64545]",
         };
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-[#1A1A1A] font-['Poppins',sans-serif] px-4 py-6 sm:px-6 md:px-10 md:py-10 pb-28 sm:pb-32 antialiased selection:bg-[#F97316]/15 selection:text-[#F97316]">
+    <div className="min-h-screen bg-[#F5F8FC] text-[#172B4D] font-['Poppins',sans-serif] px-4 py-6 sm:px-6 md:px-10 md:py-10 pb-28 sm:pb-32 antialiased selection:bg-[#1769E0]/15 selection:text-[#1769E0]">
       <main className="mx-auto w-full max-w-[1180px] flex flex-col gap-8 md:gap-10">
         {/* ============================================================ */}
         {/* HEADER SECTION                                               */}
         {/* ============================================================ */}
         <section className="flex flex-col gap-6">
-          <header className="flex items-center justify-between border-b border-[#EAEAEA] pb-6">
+          <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5 sm:gap-4 border-b border-[#DCE5EF] pb-4 sm:pb-6">
             {/* Left side: Logo + App name */}
             <div className="flex items-center min-w-0">
-              <h1 className="flex items-center gap-3 text-xl sm:text-3xl font-extrabold tracking-tight text-[#1A1A1A] whitespace-nowrap">
-                {/* Logo: App Icon (Orange tile with magnifying glass and compass needle) */}
-                <svg
-                  className="h-[22px] w-[22px] sm:h-6 sm:w-6 shrink-0"
-                  viewBox="0 0 100 100"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+              <h1 className="flex items-center gap-3 text-xl sm:text-3xl font-extrabold tracking-tight text-[#172B4D] whitespace-nowrap">
+                {/* Logo: Nearby Discovery App Icon */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo.png"
+                  alt=""
                   aria-hidden="true"
-                >
-                  <rect width="100" height="100" rx="24" fill="#F97316" />
-                  <circle
-                    cx="46"
-                    cy="46"
-                    r="25"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="6.5"
-                  />
-                  <path
-                    d="M63.5 63.5L74 74"
-                    stroke="white"
-                    strokeWidth="6.5"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    fill="white"
-                    d="M62 30L52.5 52.5L30 62L39.5 39.5Z M46 39.5A6.5 6.5 0 1 0 46 52.5A6.5 6.5 0 1 0 46 39.5Z"
-                  />
-                </svg>
+                  className="h-[22px] w-[22px] sm:h-6 sm:w-6 shrink-0 object-contain"
+                />
                 <span>Nearby Discovery</span>
               </h1>
             </div>
 
             {/* Right side: 3) LIST ↔ MAP TOGGLE */}
-            <div className="inline-flex shrink-0 items-center p-1 rounded-full bg-[#F2F2F2] border border-[#EAEAEA] shadow-inner">
+            <div className="flex sm:inline-flex w-full sm:w-auto sm:self-auto shrink-0 items-center p-1 rounded-full bg-[#F5F8FC] border border-[#DCE5EF] shadow-inner">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   viewMode === "list"
-                    ? "bg-[#F97316] text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)]"
-                    : "bg-transparent text-[#525252] hover:text-[#1A1A1A]"
+                    ? "bg-[#1769E0] text-white shadow-[0_2px_8px_rgba(23,105,224,0.3)]"
+                    : "bg-transparent text-[#5F6F82] hover:text-[#172B4D]"
                 }`}
               >
                 <svg
@@ -2111,10 +2089,10 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setViewMode("map")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   viewMode === "map"
-                    ? "bg-[#F97316] text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)]"
-                    : "bg-transparent text-[#525252] hover:text-[#1A1A1A]"
+                    ? "bg-[#1769E0] text-white shadow-[0_2px_8px_rgba(23,105,224,0.3)]"
+                    : "bg-transparent text-[#5F6F82] hover:text-[#172B4D]"
                 }`}
               >
                 <svg
@@ -2202,7 +2180,7 @@ export default function Home() {
                   }
                 }}
                 placeholder="Search anything"
-                className="w-full rounded-full border border-[#EAEAEA] bg-white py-3.5 pl-11 pr-24 text-sm text-[#1A1A1A] placeholder-[#8A8A8A] shadow-[0_2px_8px_rgba(0,0,0,0.03)] outline-none transition duration-200 focus:border-[#F97316] focus:ring-4 focus:ring-[#F97316]/10"
+                className="w-full rounded-full border border-[#DCE5EF] bg-white py-3.5 pl-11 pr-24 text-sm text-[#172B4D] placeholder-[#8A99AB] shadow-[0_2px_8px_rgba(23,43,77,0.03)] outline-none transition duration-200 focus:border-[#1769E0] focus:ring-4 focus:ring-[#1769E0]/15"
                 aria-label="Search anything"
                 aria-autocomplete="list"
               />
@@ -2210,7 +2188,7 @@ export default function Home() {
               {/* Right Action Icons: Loading / Clear / Current Location */}
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 gap-1">
                 {isLoadingLocations && (
-                  <div className="flex items-center px-1 text-[#F97316]">
+                  <div className="flex items-center px-1 text-[#1769E0]">
                     <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -2221,7 +2199,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={handleClearSearch}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F2F2F2] transition cursor-pointer"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#8A99AB] hover:text-[#172B4D] hover:bg-[#F5F8FC] transition cursor-pointer"
                     title="Clear search"
                     aria-label="Clear search"
                   >
@@ -2244,13 +2222,13 @@ export default function Home() {
                   type="button"
                   onClick={handleUseCurrentLocation}
                   disabled={isDetectingLocation}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#525252] hover:text-[#F97316] hover:bg-[#F97316]/10 transition cursor-pointer disabled:opacity-50"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#5F6F82] hover:text-[#1769E0] hover:bg-[#EAF4FF] transition cursor-pointer disabled:opacity-50"
                   title="Use current location"
                   aria-label="Use current location"
                 >
                   {isDetectingLocation ? (
                     <svg
-                      className="animate-spin h-4 w-4 text-[#F97316]"
+                      className="animate-spin h-4 w-4 text-[#1769E0]"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
@@ -2290,7 +2268,7 @@ export default function Home() {
 
             {/* Dropdown Suggestions Panel */}
             {isSearchDropdownOpen && (
-              <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-2xl sm:rounded-3xl border border-[#EAEAEA] bg-white shadow-[0_12px_36px_rgba(0,0,0,0.12)] p-3 sm:p-4 max-h-[400px] overflow-y-auto flex flex-col gap-2.5 text-left">
+              <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-2xl sm:rounded-3xl border border-[#DCE5EF] bg-white shadow-[0_12px_36px_rgba(23,43,77,0.12)] p-3 sm:p-4 max-h-[400px] overflow-y-auto flex flex-col gap-2.5 text-left">
                 {/* 1. Quick Action: Use Current Location */}
                 <button
                   type="button"
@@ -2299,16 +2277,16 @@ export default function Home() {
                     setIsSearchDropdownOpen(false);
                   }}
                   disabled={isDetectingLocation}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-[#F97316]/8 hover:bg-[#F97316] text-[#F97316] hover:text-white border border-[#F97316]/20 transition-all duration-150 cursor-pointer text-left group"
+                  className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-[#EAF4FF] hover:bg-[#1769E0] text-[#1769E0] hover:text-white border border-[#1769E0]/20 transition-all duration-150 cursor-pointer text-left group"
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white group-hover:bg-white/20 border border-[#F97316]/20 group-hover:border-transparent transition-colors">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white group-hover:bg-white/20 border border-[#1769E0]/20 group-hover:border-transparent transition-colors">
                     {isDetectingLocation ? (
-                      <svg className="animate-spin h-4 w-4 text-[#F97316] group-hover:text-white" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-4 w-4 text-[#1769E0] group-hover:text-white" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                       </svg>
                     ) : (
-                      <svg className="h-4 w-4 text-[#F97316] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="h-4 w-4 text-[#1769E0] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <circle cx="12" cy="12" r="3" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v3m0 14v3M2 12h3m14 0h3" />
                       </svg>
@@ -2318,7 +2296,7 @@ export default function Home() {
                     <span className="text-xs sm:text-sm font-bold block truncate">
                       {isDetectingLocation ? "Detecting location..." : "Use current location"}
                     </span>
-                    <span className="text-[11px] text-[#7A7A7A] group-hover:text-white/80 block truncate">
+                    <span className="text-[11px] text-[#5F6F82] group-hover:text-white/80 block truncate">
                       Find spots and landmarks near you
                     </span>
                   </div>
@@ -2326,8 +2304,8 @@ export default function Home() {
 
                 {/* 2. Empty query: Show Suggested Cities */}
                 {!searchQuery.trim() && (
-                  <div className="flex flex-col gap-1 pt-1 border-t border-[#F0F0F0]">
-                    <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8A8A8A] px-2 py-1">
+                  <div className="flex flex-col gap-1 pt-1 border-t border-[#DCE5EF]">
+                    <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8A99AB] px-2 py-1">
                       Suggested Cities
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
@@ -2343,17 +2321,17 @@ export default function Home() {
                             }}
                             className={`flex items-center justify-between p-2 rounded-xl transition cursor-pointer text-left ${
                               isSelected
-                                ? "bg-[#F97316]/10 text-[#F97316] font-semibold"
-                                : "hover:bg-[#F7F7F7] text-[#1A1A1A]"
+                                ? "bg-[#EAF4FF] text-[#1769E0] font-semibold"
+                                : "hover:bg-[#F5F8FC] text-[#172B4D]"
                             }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <svg className="h-3.5 w-3.5 shrink-0 text-[#8A8A8A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <svg className="h-3.5 w-3.5 shrink-0 text-[#8A99AB]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                               </svg>
                               <span className="text-xs font-medium truncate">{city.name}</span>
                             </div>
-                            <span className="text-[10px] text-[#8A8A8A] font-mono">{city.badge}</span>
+                            <span className="text-[10px] text-[#8A99AB] font-mono">{city.badge}</span>
                           </button>
                         );
                       })}
@@ -2363,12 +2341,12 @@ export default function Home() {
 
                 {/* 3. With query: Show Location & Landmark Suggestions */}
                 {searchQuery.trim() && locationSuggestions.length > 0 && (
-                  <div className="flex flex-col gap-1 pt-1 border-t border-[#F0F0F0]">
+                  <div className="flex flex-col gap-1 pt-1 border-t border-[#DCE5EF]">
                     <div className="flex items-center justify-between px-2 py-1">
-                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8A8A8A]">
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8A99AB]">
                         Cities, Locations & Landmarks
                       </span>
-                      <span className="text-[10px] text-[#F97316] font-semibold">
+                      <span className="text-[10px] text-[#1769E0] font-semibold">
                         {locationSuggestions.length} found
                       </span>
                     </div>
@@ -2380,10 +2358,10 @@ export default function Home() {
                           handleSelectLocation(suggestion);
                           setIsSearchDropdownOpen(false);
                         }}
-                        className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#F97316]/8 transition cursor-pointer text-left group"
+                        className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#EAF4FF]/50 transition cursor-pointer text-left group"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#F5F5F5] group-hover:bg-[#F97316] group-hover:text-white text-[#7A7A7A] transition-colors">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#F5F8FC] group-hover:bg-[#1769E0] group-hover:text-white text-[#5F6F82] transition-colors">
                             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -2391,19 +2369,19 @@ export default function Home() {
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs sm:text-sm font-semibold text-[#1A1A1A] group-hover:text-[#F97316] truncate">
+                              <span className="text-xs sm:text-sm font-semibold text-[#172B4D] group-hover:text-[#1769E0] truncate">
                                 {suggestion.name}
                               </span>
-                              <span className="rounded bg-[#EAEAEA] px-1 py-0.2 text-[9px] font-semibold text-[#525252]">
+                              <span className="rounded bg-[#F5F8FC] px-1 py-0.2 text-[9px] font-semibold text-[#5F6F82] border border-[#DCE5EF]">
                                 {suggestion.placeType}
                               </span>
                             </div>
-                            <p className="text-[11px] text-[#7A7A7A] truncate">
+                            <p className="text-[11px] text-[#5F6F82] truncate">
                               {suggestion.contextText || suggestion.fullName}
                             </p>
                           </div>
                         </div>
-                        <span className="text-[11px] font-semibold text-[#F97316] shrink-0 pl-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[11px] font-semibold text-[#1769E0] shrink-0 pl-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           Discover &rarr;
                         </span>
                       </button>
@@ -2413,12 +2391,12 @@ export default function Home() {
 
                 {/* 4. With query: Matching places in current discovery list */}
                 {searchQuery.trim() && filteredPlaces.length > 0 && (
-                  <div className="flex flex-col gap-1 pt-1 border-t border-[#F0F0F0]">
+                  <div className="flex flex-col gap-1 pt-1 border-t border-[#DCE5EF]">
                     <div className="flex items-center justify-between px-2 py-1">
-                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8A8A8A]">
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8A99AB]">
                         Places in {selectedCity}
                       </span>
-                      <span className="text-[10px] text-[#525252]">
+                      <span className="text-[10px] text-[#5F6F82]">
                         {filteredPlaces.length} matching
                       </span>
                     </div>
@@ -2430,23 +2408,23 @@ export default function Home() {
                           setSelectedModalPlace(place);
                           setIsSearchDropdownOpen(false);
                         }}
-                        className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#F5F5F5] transition cursor-pointer text-left"
+                        className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#F5F8FC] transition cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-[#EAEAEA]">
+                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-[#F5F8FC]">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={place.image} alt={place.name} className="h-full w-full object-cover" />
                           </div>
                           <div className="min-w-0">
-                            <span className="text-xs sm:text-sm font-semibold text-[#1A1A1A] truncate block">
+                            <span className="text-xs sm:text-sm font-semibold text-[#172B4D] truncate block">
                               {place.name}
                             </span>
-                            <span className="text-[10px] text-[#F97316] font-semibold uppercase tracking-wider truncate block">
+                            <span className="text-[10px] text-[#0F8B8D] font-semibold uppercase tracking-wider truncate block">
                               {place.category} &bull; {place.distance}
                             </span>
                           </div>
                         </div>
-                        <span className="text-[11px] font-medium text-[#525252] shrink-0 pl-2">
+                        <span className="text-[11px] font-medium text-[#5F6F82] shrink-0 pl-2">
                           View details
                         </span>
                       </button>
@@ -2462,9 +2440,9 @@ export default function Home() {
                       handleResolveCustomLocation(searchQuery);
                       setIsSearchDropdownOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#525252] hover:text-[#F97316] hover:bg-[#F97316]/5 transition cursor-pointer border-t border-[#F0F0F0]"
+                    className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-[#5F6F82] hover:text-[#1769E0] hover:bg-[#EAF4FF] transition cursor-pointer border-t border-[#DCE5EF]"
                   >
-                    <svg className="h-3.5 w-3.5 text-[#F97316] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="h-3.5 w-3.5 text-[#1769E0] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     </svg>
                     <span className="truncate">Set &ldquo;{searchQuery.trim()}&rdquo; as discovery location</span>
@@ -2487,11 +2465,11 @@ export default function Home() {
                     onClick={() => handlePillClick(pill)}
                     className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold border transition-all duration-200 cursor-pointer ${
                       isActive
-                        ? "bg-[#F97316] text-white shadow-[0_3px_10px_rgba(249,115,22,0.3)] border-[#F97316] scale-[1.02]"
-                        : "bg-white text-[#525252] border-[#EAEAEA] hover:border-[#D4D4D4] hover:text-[#1A1A1A] active:scale-95"
+                        ? "bg-[#1769E0] text-white shadow-[0_3px_10px_rgba(23,105,224,0.3)] border-[#1769E0] scale-[1.02]"
+                        : "bg-white text-[#5F6F82] border-[#DCE5EF] hover:border-[#1769E0]/40 hover:text-[#172B4D] active:scale-95"
                     }`}
                   >
-                    <span className={isActive ? "text-white" : "text-[#8A8A8A]"}>
+                    <span className={isActive ? "text-white" : "text-[#8A99AB]"}>
                       {pill.icon}
                     </span>
                     <span>{pill.label}</span>
@@ -2508,9 +2486,9 @@ export default function Home() {
         {viewMode === "list" ? (
           <section className="flex flex-col gap-6">
             {/* Section Header with Dynamic Result Count */}
-            <div className="flex items-center justify-between border-b border-[#EAEAEA] pb-4">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1A1A1A]">
+            <div className="flex items-center justify-between gap-3 sm:gap-4 border-b border-[#DCE5EF] pb-4">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172B4D]">
                   {activeNavTab === "saved"
                     ? "Saved Places"
                     : activeNavTab === "activity"
@@ -2523,7 +2501,7 @@ export default function Home() {
                     ? `${activeFilterSummary} Places`
                     : `Trending in ${selectedCity}`}
                 </h2>
-                <p className="text-xs text-[#525252] font-normal mt-0.5">
+                <p className="text-xs text-[#5F6F82] font-normal mt-0.5">
                   {debouncedSearchQuery.trim()
                     ? `Matching name, category, or vibe in ${selectedCity}`
                     : `Curated by proximity and local character • ${selectedLocation}`}
@@ -2531,82 +2509,82 @@ export default function Home() {
               </div>
 
               {/* Result Count Badge */}
-              <span className="inline-flex items-center rounded-full bg-[#F97316]/10 px-3.5 py-1 text-xs font-bold text-[#F97316] border border-[#F97316]/20 shadow-xs">
+              <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#EAF4FF] px-3.5 py-1 text-xs font-bold text-[#1247A8] border border-[#1769E0]/30 shadow-xs whitespace-nowrap text-center">
                 {filteredPlaces.length} {filteredPlaces.length === 1 ? "place" : "places"}
               </span>
             </div>
 
             {/* 6) Active Nav Tab = "activity" View */}
             {activeNavTab === "activity" ? (
-              <div className="rounded-3xl border border-[#EAEAEA] bg-white p-6 sm:p-8 flex flex-col gap-4 shadow-sm">
-                <h3 className="text-base font-bold text-[#1A1A1A]">Real-Time Pune Activity</h3>
+              <div className="rounded-3xl border border-[#DCE5EF] bg-white p-6 sm:p-8 flex flex-col gap-4 shadow-sm">
+                <h3 className="text-base font-bold text-[#172B4D]">Real-Time Pune Activity</h3>
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#FAFAFA] border border-[#EAEAEA]">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600 font-bold text-xs">
+                  <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F5F8FC] border border-[#DCE5EF]">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D64545]/10 text-[#D64545] font-bold text-xs">
                       🔥
                     </span>
                     <div>
-                      <p className="text-sm font-semibold text-[#1A1A1A]">High Morning Crowd at Vohuman Cafe</p>
-                      <p className="text-xs text-[#525252]">Estimated 15–20 min rush queue for bun maska & cheese omelettes.</p>
+                      <p className="text-sm font-semibold text-[#172B4D]">High Morning Crowd at Vohuman Cafe</p>
+                      <p className="text-xs text-[#5F6F82]">Estimated 15–20 min rush queue for bun maska & cheese omelettes.</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#FAFAFA] border border-[#EAEAEA]">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xs">
+                  <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F5F8FC] border border-[#DCE5EF]">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E7F7F1] text-[#16865C] font-bold text-xs">
                       🌿
                     </span>
                     <div>
-                      <p className="text-sm font-semibold text-[#1A1A1A]">Quiet Hours at Osho Teerth Park</p>
-                      <p className="text-xs text-[#525252]">Serene bamboo walk conditions with zero wait time right now.</p>
+                      <p className="text-sm font-semibold text-[#172B4D]">Quiet Hours at Osho Teerth Park</p>
+                      <p className="text-xs text-[#5F6F82]">Serene bamboo walk conditions with zero wait time right now.</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#FAFAFA] border border-[#EAEAEA]">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 font-bold text-xs">
+                  <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F5F8FC] border border-[#DCE5EF]">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C58A22]/10 text-[#C58A22] font-bold text-xs">
                       🛍️
                     </span>
                     <div>
-                      <p className="text-sm font-semibold text-[#1A1A1A]">Evening Street Bazaar Active at FC Road</p>
-                      <p className="text-xs text-[#525252]">Bookstalls and food vendors opening along Fergusson College Road.</p>
+                      <p className="text-sm font-semibold text-[#172B4D]">Evening Street Bazaar Active at FC Road</p>
+                      <p className="text-xs text-[#5F6F82]">Bookstalls and food vendors opening along Fergusson College Road.</p>
                     </div>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveNavTab("discover")}
-                  className="self-start mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#F97316] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#EA580C] transition cursor-pointer"
+                  className="self-start mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#1769E0] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#1247A8] transition cursor-pointer"
                 >
                   Browse All Places
                 </button>
               </div>
             ) : activeNavTab === "profile" ? (
               /* 6) Active Nav Tab = "profile" View */
-              <div className="rounded-3xl border border-[#EAEAEA] bg-white p-6 sm:p-8 flex flex-col gap-6 shadow-sm">
+              <div className="rounded-3xl border border-[#DCE5EF] bg-white p-6 sm:p-8 flex flex-col gap-6 shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F97316] text-white text-xl font-bold shadow-md">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1769E0] text-white text-xl font-bold shadow-md">
                     RS
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-[#1A1A1A]">Pune City Explorer</h3>
-                    <p className="text-xs text-[#525252]">Active Discovery Member · Level 2</p>
+                    <h3 className="text-lg font-bold text-[#172B4D]">Pune City Explorer</h3>
+                    <p className="text-xs text-[#5F6F82]">Active Discovery Member · Level 2</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="rounded-2xl border border-[#EAEAEA] bg-[#FAFAFA] p-4 text-center">
-                    <span className="text-xl font-bold text-[#F97316]">{bookmarkedIds.length}</span>
-                    <p className="text-xs text-[#525252] mt-0.5">Saved Places</p>
+                  <div className="rounded-2xl border border-[#DCE5EF] bg-[#F5F8FC] p-4 text-center">
+                    <span className="text-xl font-bold text-[#1769E0]">{bookmarkedIds.length}</span>
+                    <p className="text-xs text-[#5F6F82] mt-0.5">Saved Places</p>
                   </div>
-                  <div className="rounded-2xl border border-[#EAEAEA] bg-[#FAFAFA] p-4 text-center">
-                    <span className="text-xl font-bold text-[#1A1A1A]">8</span>
-                    <p className="text-xs text-[#525252] mt-0.5">Curated Spots</p>
+                  <div className="rounded-2xl border border-[#DCE5EF] bg-[#F5F8FC] p-4 text-center">
+                    <span className="text-xl font-bold text-[#172B4D]">8</span>
+                    <p className="text-xs text-[#5F6F82] mt-0.5">Curated Spots</p>
                   </div>
-                  <div className="rounded-2xl border border-[#EAEAEA] bg-[#FAFAFA] p-4 text-center col-span-2 sm:col-span-1">
-                    <span className="text-xl font-bold text-emerald-600">MH-12</span>
-                    <p className="text-xs text-[#525252] mt-0.5">Home Territory</p>
+                  <div className="rounded-2xl border border-[#DCE5EF] bg-[#F5F8FC] p-4 text-center col-span-2 sm:col-span-1">
+                    <span className="text-xl font-bold text-[#16865C]">MH-12</span>
+                    <p className="text-xs text-[#5F6F82] mt-0.5">Home Territory</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveNavTab("discover")}
-                  className="self-start mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#F97316] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#EA580C] transition cursor-pointer"
+                  className="self-start mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#1769E0] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#1247A8] transition cursor-pointer"
                 >
                   Return to Discovery
                 </button>
@@ -2631,10 +2609,10 @@ export default function Home() {
                           setSelectedModalPlace(place);
                         }
                       }}
-                      className="group relative flex flex-row items-stretch overflow-hidden rounded-[8px] border border-[#EAEAEA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D4D4D4] hover:shadow-[0_10px_25px_rgba(0,0,0,0.06)] cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-[#F97316]/30"
+                      className="group relative flex flex-col sm:flex-row items-stretch overflow-hidden rounded-[8px] border border-[#DCE5EF] bg-white shadow-[0_2px_8px_rgba(23,43,77,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#1769E0]/40 hover:shadow-[0_10px_25px_rgba(23,43,77,0.08)] cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-[#1769E0]/30"
                     >
-                      {/* Left: Fixed-width thumbnail with consistent 4:3 aspect ratio */}
-                      <div className="relative w-28 sm:w-[200px] shrink-0 overflow-hidden bg-[#F2F2F2] aspect-[4/3] self-stretch">
+                      {/* Thumbnail: Mobile full-width 16:10 aspect ratio; Desktop fixed-width 200px 4:3 aspect ratio */}
+                      <div className="relative w-full aspect-[16/10] sm:w-[200px] sm:aspect-[4/3] sm:self-stretch shrink-0 overflow-hidden bg-[#F5F8FC]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={place.image}
@@ -2644,10 +2622,10 @@ export default function Home() {
                         />
 
                         {/* Ambient gradient overlay */}
-                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/25" />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/25" />
 
                         {/* Rank Badge */}
-                        <span className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 inline-flex items-center rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[10px] sm:text-[11px] font-bold tracking-wider text-white border border-white/20 shadow-xs">
+                        <span className="absolute top-2.5 left-2.5 sm:top-2.5 sm:left-2.5 inline-flex items-center rounded-full bg-black/60 backdrop-blur-md px-2.5 py-0.5 sm:px-2 text-[11px] sm:text-[11px] font-bold tracking-wider text-white border border-white/20 shadow-xs">
                           #{place.rank}
                         </span>
 
@@ -2655,16 +2633,16 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={(e) => toggleBookmark(place.id, e)}
-                          className={`absolute top-2 right-2 sm:top-2.5 sm:right-2.5 flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full backdrop-blur-md border transition-all duration-200 active:scale-90 shadow-xs cursor-pointer ${
+                          className={`absolute top-2.5 right-2.5 sm:top-2.5 sm:right-2.5 flex h-7 w-7 items-center justify-center rounded-full backdrop-blur-md border transition-all duration-200 active:scale-90 shadow-xs cursor-pointer ${
                             isBookmarked
-                              ? "bg-[#F97316] text-white border-[#F97316]"
+                              ? "bg-[#1769E0] text-white border-[#1769E0]"
                               : "bg-black/45 text-white border-white/20 hover:bg-black/65"
                           }`}
                           title={isBookmarked ? "Saved to collection" : "Save location"}
                           aria-label="Save bookmark"
                         >
                           <svg
-                            className="h-3 w-3 sm:h-3.5 sm:w-3.5"
+                            className="h-3.5 w-3.5"
                             fill={isBookmarked ? "currentColor" : "none"}
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -2677,36 +2655,68 @@ export default function Home() {
                             />
                           </svg>
                         </button>
+
+                        {/* Mobile-only Distance Badge overlaid on thumbnail */}
+                        <span className="sm:hidden absolute bottom-2.5 right-2.5 inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-white border border-white/20 shadow-xs">
+                          <svg
+                            className="h-3.5 w-3.5 text-white/90"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          {formatDistanceKm(place.distance)}
+                        </span>
                       </div>
 
                       {/* Content Area: Middle & Right Columns */}
                       <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-stretch justify-between">
-                        {/* Middle: Place Information (Hierarchy: Category -> Title -> Badges -> Description) */}
-                        <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col justify-start gap-1.5 sm:gap-2">
+                        {/* Middle: Place Information */}
+                        <div className="flex-1 min-w-0 p-4 sm:p-4 flex flex-col justify-start gap-2">
                           {/* a. Category Label */}
-                          <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase text-[#F97316] block">
+                          <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase text-[#0F8B8D] block">
                             {place.category}
                           </span>
 
-                          {/* b. Place Title (maximum two lines) */}
-                          <h3 className="text-sm sm:text-base md:text-[1.05rem] font-bold tracking-tight text-[#1A1A1A] group-hover:text-[#F97316] transition-colors leading-snug line-clamp-2">
-                            {place.name}
-                          </h3>
+                          {/* b. Place Title + Mobile-only Price Indicator */}
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="text-base sm:text-base md:text-[1.05rem] font-bold tracking-tight text-[#172B4D] group-hover:text-[#1769E0] transition-colors leading-snug line-clamp-2">
+                              {place.name}
+                            </h3>
+                            {/* Mobile-only Price Indicator */}
+                            <span
+                              className="sm:hidden shrink-0 font-bold text-xs tracking-wider text-[#172B4D] bg-[#F5F8FC] px-2.5 py-1 rounded-md border border-[#DCE5EF] self-start"
+                              title={`Price level: ${place.price.replace(/\$/g, "₹")}`}
+                            >
+                              {place.price.replace(/\$/g, "₹")}
+                            </span>
+                          </div>
 
                           {/* c. Crowd/Vibe and Best-Time Badges */}
                           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                             {/* Crowd Status Badge */}
                             <span
-                              className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-semibold border ${crowdStyle.pill}`}
+                              className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] sm:text-[11px] font-semibold border ${crowdStyle.pill}`}
                             >
                               <span className={`h-1.5 w-1.5 rounded-full ${crowdStyle.dot}`} />
                               {place.crowdStatus}
                             </span>
 
                             {/* Best-Time Recommendation */}
-                            <span className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-[#F4F4F4] px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-medium text-[#525252] border border-[#EAEAEA]">
+                            <span className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-[#F5F8FC] px-2.5 py-0.5 text-[10px] sm:text-[11px] font-medium text-[#5F6F82] border border-[#DCE5EF]">
                               <svg
-                                className="h-3 w-3 text-[#8A8A8A]"
+                                className="h-3 w-3 text-[#8A99AB]"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -2722,28 +2732,85 @@ export default function Home() {
                             </span>
                           </div>
 
-                          {/* d. Short Description (limited to two lines) */}
-                          <p className="text-xs sm:text-[13px] leading-relaxed text-[#525252] font-normal line-clamp-2">
+                          {/* d. Short Description */}
+                          <p className="text-xs sm:text-[13px] leading-relaxed text-[#5F6F82] font-normal line-clamp-2">
                             {place.description}
                           </p>
+
+                          {/* e. Mobile-only Bottom Row: Vibe + Action Buttons */}
+                          <div className="sm:hidden mt-1 pt-3 border-t border-[#DCE5EF] flex items-center justify-between gap-2">
+                            {/* Vibe Line */}
+                            <div className="text-xs text-[#5F6F82] min-w-0 truncate">
+                              <span className="font-semibold text-[#172B4D] mr-1.5">Vibe:</span>
+                              <span>{place.vibe}</span>
+                            </div>
+
+                            {/* Action Buttons: Compact "Map" and "Details" */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={(e) => handleOpenMapWithPlace(place, e)}
+                                className="inline-flex items-center gap-1 rounded-xl border border-[#DCE5EF] bg-white px-3 py-1.5 text-xs font-semibold text-[#172B4D] hover:bg-[#EAF4FF] hover:border-[#1769E0]/50 hover:text-[#1769E0] transition-all duration-200 cursor-pointer shadow-xs"
+                              >
+                                <svg
+                                  className="h-3.5 w-3.5 text-[#5F6F82]"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                                  />
+                                </svg>
+                                Map
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedModalPlace(place);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-xl bg-[#1769E0] px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#1247A8] active:scale-95 transition-all duration-200 cursor-pointer"
+                              >
+                                <span>Details</span>
+                                <svg
+                                  className="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9 5l7 7-7 7"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Right: Secondary Info & Action Buttons */}
-                        <div className="shrink-0 p-3 sm:p-4 flex flex-wrap sm:flex-col justify-between items-center sm:items-center border-t sm:border-t-0 sm:border-l border-[#F0F0F0] gap-2.5 sm:gap-3 sm:w-[220px] bg-[#FAFAFA]/40 sm:bg-transparent">
+                        {/* Right: Secondary Info & Action Buttons (Desktop only) */}
+                        <div className="hidden sm:flex shrink-0 p-4 flex-col justify-between items-center border-l border-[#DCE5EF] gap-3 w-[220px]">
                           {/* Price Level & Distance (grouped near top on desktop) */}
-                          <div className="flex items-center gap-1.5 sm:gap-2">
+                          <div className="flex items-center gap-2">
                             {/* Price Indicator (using ₹ symbol) */}
                             <span
-                              className="font-bold text-xs tracking-wider text-[#525252] bg-[#F4F4F4] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-[#EAEAEA]"
+                              className="font-bold text-xs tracking-wider text-[#172B4D] bg-[#F5F8FC] px-2.5 py-1 rounded-md border border-[#DCE5EF]"
                               title={`Price level: ${place.price.replace(/\$/g, "₹")}`}
                             >
                               {place.price.replace(/\$/g, "₹")}
                             </span>
 
                             {/* Distance Badge (in km) */}
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#F4F4F4] sm:bg-[#FAFAFA] px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-[#525252] border border-[#EAEAEA]">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F8FC] px-2.5 py-1 text-xs font-semibold text-[#5F6F82] border border-[#DCE5EF]">
                               <svg
-                                className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#F97316]"
+                                className="h-3.5 w-3.5 text-[#1769E0]"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -2765,15 +2832,15 @@ export default function Home() {
                           </div>
 
                           {/* Action Buttons: Compact "Map" and "Details" with equal horizontal padding */}
-                          <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             {/* Map Button: Switches to map view with this place selected */}
                             <button
                               type="button"
                               onClick={(e) => handleOpenMapWithPlace(place, e)}
-                              className="inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#EAEAEA] bg-[#F7F7F7] px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-[#1A1A1A] hover:bg-[#F97316]/10 hover:border-[#F97316]/50 hover:text-[#EA580C] transition-all duration-200 cursor-pointer shadow-xs"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#DCE5EF] bg-white px-3 py-1.5 text-xs font-semibold text-[#172B4D] hover:bg-[#EAF4FF] hover:border-[#1769E0]/50 hover:text-[#1769E0] transition-all duration-200 cursor-pointer shadow-xs"
                             >
                               <svg
-                                className="h-3.5 w-3.5 text-[#525252]"
+                                className="h-3.5 w-3.5 text-[#5F6F82]"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -2795,11 +2862,11 @@ export default function Home() {
                                 e.stopPropagation();
                                 setSelectedModalPlace(place);
                               }}
-                              className="inline-flex items-center gap-1 rounded-xl bg-[#F97316] px-3 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] hover:bg-[#EA580C] active:scale-95 transition-all duration-200 cursor-pointer"
+                              className="inline-flex items-center gap-1 rounded-xl bg-[#1769E0] px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#1247A8] active:scale-95 transition-all duration-200 cursor-pointer"
                             >
                               <span>Details</span>
                               <svg
-                                className="h-3 w-3 sm:h-3.5 sm:w-3.5"
+                                className="h-3.5 w-3.5"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -2821,8 +2888,8 @@ export default function Home() {
 
                 {/* Empty State */}
                 {filteredPlaces.length === 0 && (
-                  <div className="w-full py-14 text-center rounded-3xl border border-dashed border-[#EAEAEA] bg-white p-8">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#FAFAFA] text-[#8A8A8A] mb-3 border border-[#EAEAEA]">
+                  <div className="w-full py-14 text-center rounded-3xl border border-dashed border-[#DCE5EF] bg-white p-8">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F8FC] text-[#8A99AB] mb-3 border border-[#DCE5EF]">
                       <svg
                         className="h-6 w-6"
                         fill="none"
@@ -2837,12 +2904,12 @@ export default function Home() {
                         />
                       </svg>
                     </div>
-                    <p className="text-base font-semibold text-[#1A1A1A]">
+                    <p className="text-base font-semibold text-[#172B4D]">
                       {debouncedSearchQuery.trim()
                         ? `No results found for "${debouncedSearchQuery.trim()}"`
                         : "No matching places. Try changing filters."}
                     </p>
-                    <p className="mt-1 text-xs text-[#525252] max-w-md mx-auto">
+                    <p className="mt-1 text-xs text-[#5F6F82] max-w-md mx-auto">
                       {debouncedSearchQuery.trim()
                         ? `No places in ${selectedCity} match this search. Try searching by place name, category (e.g. cafe, heritage), or vibe (chill, lively).`
                         : activeNavTab === "saved"
@@ -2854,7 +2921,7 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={handleClearSearch}
-                          className="inline-flex items-center rounded-xl bg-[#F97316] px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] hover:bg-[#EA580C] transition cursor-pointer"
+                          className="inline-flex items-center rounded-xl bg-[#1769E0] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#1247A8] transition cursor-pointer"
                         >
                           Clear search
                         </button>
@@ -2869,7 +2936,7 @@ export default function Home() {
                             handleClearSearch();
                             setActiveNavTab("discover");
                           }}
-                          className="inline-flex items-center rounded-xl bg-[#FAFAFA] border border-[#EAEAEA] px-4 py-2 text-xs font-semibold text-[#525252] hover:text-[#1A1A1A] hover:bg-[#F2F2F2] transition cursor-pointer"
+                          className="inline-flex items-center rounded-xl bg-[#F5F8FC] border border-[#DCE5EF] px-4 py-2 text-xs font-semibold text-[#5F6F82] hover:text-[#172B4D] hover:bg-[#EAF4FF] transition cursor-pointer"
                         >
                           Reset filters
                         </button>
@@ -2887,17 +2954,17 @@ export default function Home() {
           <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1A1A1A]">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172B4D]">
                   Interactive {selectedCity} Map
                 </h2>
-                <p className="text-xs text-[#525252]">
+                <p className="text-xs text-[#5F6F82]">
                   Showing real lat/lng coordinates across {selectedCity} with OpenStreetMap tiles
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-[#1A1A1A] shadow-sm border border-[#EAEAEA] hover:border-[#F97316] hover:text-[#F97316] transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-[#172B4D] shadow-xs border border-[#DCE5EF] hover:border-[#1769E0] hover:text-[#1769E0] transition cursor-pointer"
               >
                 Back to List
               </button>
@@ -2920,7 +2987,7 @@ export default function Home() {
         aria-label="Bottom Navigation"
         className="fixed bottom-5 inset-x-0 z-40 flex justify-center pointer-events-none px-4"
       >
-        <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/90 backdrop-blur-xl px-2.5 py-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.12)] border border-[#EAEAEA]/80">
+        <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/90 backdrop-blur-xl px-2.5 py-1.5 shadow-[0_12px_32px_rgba(23,43,77,0.12)] border border-[#DCE5EF]/80">
           {/* Discover Tab */}
           <button
             type="button"
@@ -2930,8 +2997,8 @@ export default function Home() {
             }}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all duration-200 cursor-pointer ${
               activeNavTab === "discover" && viewMode === "list"
-                ? "bg-[#F97316] text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)]"
-                : "text-[#525252] hover:text-[#1A1A1A] hover:bg-black/5"
+                ? "bg-[#1769E0] text-white shadow-[0_2px_8px_rgba(23,105,224,0.3)]"
+                : "text-[#5F6F82] hover:text-[#172B4D] hover:bg-black/5"
             }`}
           >
             <svg
@@ -2964,8 +3031,8 @@ export default function Home() {
             }}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all duration-200 cursor-pointer ${
               activeNavTab === "saved"
-                ? "bg-[#F97316] text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)]"
-                : "text-[#525252] hover:text-[#1A1A1A] hover:bg-black/5"
+                ? "bg-[#1769E0] text-white shadow-[0_2px_8px_rgba(23,105,224,0.3)]"
+                : "text-[#5F6F82] hover:text-[#172B4D] hover:bg-black/5"
             }`}
           >
             <svg
@@ -2986,8 +3053,8 @@ export default function Home() {
               <span
                 className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                   activeNavTab === "saved"
-                    ? "bg-white text-[#F97316]"
-                    : "bg-[#F97316]/10 text-[#F97316]"
+                    ? "bg-white text-[#1769E0]"
+                    : "bg-[#EAF4FF] text-[#1769E0]"
                 }`}
               >
                 {bookmarkedIds.length}
@@ -3004,8 +3071,8 @@ export default function Home() {
             }}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all duration-200 cursor-pointer ${
               activeNavTab === "activity"
-                ? "bg-[#F97316] text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)]"
-                : "text-[#525252] hover:text-[#1A1A1A] hover:bg-black/5"
+                ? "bg-[#1769E0] text-white shadow-[0_2px_8px_rgba(23,105,224,0.3)]"
+                : "text-[#5F6F82] hover:text-[#172B4D] hover:bg-black/5"
             }`}
           >
             <svg
@@ -3033,8 +3100,8 @@ export default function Home() {
             }}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all duration-200 cursor-pointer ${
               activeNavTab === "profile"
-                ? "bg-[#F97316] text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)]"
-                : "text-[#525252] hover:text-[#1A1A1A] hover:bg-black/5"
+                ? "bg-[#1769E0] text-white shadow-[0_2px_8px_rgba(23,105,224,0.3)]"
+                : "text-[#5F6F82] hover:text-[#172B4D] hover:bg-black/5"
             }`}
           >
             <svg
@@ -3066,14 +3133,14 @@ export default function Home() {
           onClick={() => setSelectedModalPlace(null)}
         >
           <div
-            className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl border border-[#EAEAEA] p-6 sm:p-8 flex flex-col gap-4 text-left"
+            className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-[0_24px_48px_rgba(23,43,77,0.18)] border border-[#DCE5EF] p-6 sm:p-8 flex flex-col gap-4 text-left"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button
               type="button"
               onClick={() => setSelectedModalPlace(null)}
-              className="absolute top-5 right-5 flex h-8 w-8 items-center justify-center rounded-full bg-[#F4F4F4] text-[#525252] hover:bg-[#EAEAEA] hover:text-[#1A1A1A] transition cursor-pointer"
+              className="absolute top-5 right-5 flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F8FC] text-[#5F6F82] hover:bg-[#DCE5EF] hover:text-[#172B4D] transition cursor-pointer"
               aria-label="Close modal"
             >
               <svg
@@ -3092,7 +3159,7 @@ export default function Home() {
             </button>
 
             {/* Modal Image */}
-            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-[#F2F2F2]">
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-[#F5F8FC]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={selectedModalPlace.image}
@@ -3110,14 +3177,14 @@ export default function Home() {
             {/* Content Details */}
             <div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#F97316]">
+                <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#0F8B8D]">
                   {selectedModalPlace.category}
                 </span>
-                <span className="font-semibold text-sm text-[#525252] bg-[#F4F4F4] px-2.5 py-0.5 rounded-md border border-[#EAEAEA]">
-                  {selectedModalPlace.price}
+                <span className="font-semibold text-sm text-[#172B4D] bg-[#F5F8FC] px-2.5 py-0.5 rounded-md border border-[#DCE5EF]">
+                  {selectedModalPlace.price.replace(/\$/g, "₹")}
                 </span>
               </div>
-              <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#1A1A1A]">
+              <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#172B4D]">
                 {selectedModalPlace.name}
               </h2>
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -3133,19 +3200,19 @@ export default function Home() {
                   />
                   {selectedModalPlace.crowdStatus}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F4F4] px-3 py-1 text-[11px] font-medium text-[#525252] border border-[#EAEAEA]">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F8FC] px-3 py-1 text-[11px] font-medium text-[#5F6F82] border border-[#DCE5EF]">
                   {selectedModalPlace.bestTime}
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-[#525252]">
+              <p className="mt-3 text-sm leading-relaxed text-[#5F6F82]">
                 {selectedModalPlace.description}
               </p>
             </div>
 
             {/* Modal Vibe & Actions */}
-            <div className="mt-4 pt-4 border-t border-[#EAEAEA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="text-xs text-[#525252]">
-                <span className="font-semibold text-[#1A1A1A] mr-1.5">Vibe:</span>
+            <div className="mt-4 pt-4 border-t border-[#DCE5EF] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="text-xs text-[#5F6F82]">
+                <span className="font-semibold text-[#172B4D] mr-1.5">Vibe:</span>
                 <span>{selectedModalPlace.vibe}</span>
               </div>
 
@@ -3155,8 +3222,8 @@ export default function Home() {
                   onClick={(e) => toggleBookmark(selectedModalPlace.id, e)}
                   className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold border transition cursor-pointer ${
                     bookmarkedIds.includes(selectedModalPlace.id)
-                      ? "bg-[#F97316] text-white border-[#F97316]"
-                      : "bg-white text-[#1A1A1A] border-[#EAEAEA] hover:bg-[#F4F4F4]"
+                      ? "bg-[#1769E0] text-white border-[#1769E0]"
+                      : "bg-white text-[#172B4D] border-[#DCE5EF] hover:bg-[#F5F8FC]"
                   }`}
                 >
                   <svg
@@ -3185,14 +3252,14 @@ export default function Home() {
                     setSelectedModalPlace(null);
                     handleOpenMapWithPlace(place);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAEAEA] bg-[#F7F7F7] px-4 py-2 text-xs font-semibold text-[#1A1A1A] hover:bg-[#F97316]/10 hover:border-[#F97316]/50 hover:text-[#EA580C] transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#DCE5EF] bg-[#F5F8FC] px-4 py-2 text-xs font-semibold text-[#172B4D] hover:bg-[#EAF4FF] hover:border-[#1769E0]/50 hover:text-[#1769E0] transition cursor-pointer"
                 >
                   View on Map
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedModalPlace(null)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#F97316] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#EA580C] transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#1769E0] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#1247A8] transition cursor-pointer"
                 >
                   Done
                 </button>

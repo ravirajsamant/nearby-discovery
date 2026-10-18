@@ -1,11 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FAFAFA;
-  --foreground: #525252;
-  --primary: #F97316;
-  --primary-hover: #EA580C;
+  --background: #F5F8FC;
+  --foreground: #5F6F82;
+  --primary: #1769E0;
+  --primary-hover: #1247A8;
   --font-poppins: 'Poppins', sans-serif;
+
+  /* Nearby Discovery Design System v1.0 Tokens */
+  --color-primary: #1769E0;
+  --color-primary-hover: #1247A8;
+  --color-primary-deep: #1247A8;
+  --color-primary-light: #EAF4FF;
+  --color-teal: #0F8B8D;
+  --color-teal-deep: #086F73;
+  --color-mint: #E7F7F1;
+  --color-success: #16865C;
+
+  /* Neutrals & Text */
+  --color-canvas: #F5F8FC;
+  --color-surface: #FFFFFF;
+  --color-border: #DCE5EF;
+  --color-text-primary: #172B4D;
+  --color-text-secondary: #5F6F82;
+  --color-muted: #8A99AB;
+
+  /* Semantic Colors */
+  --color-warning: #C58A22;
+  --color-error: #D64545;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #1769E0 0%, #278CCB 50%, #0F8B8D 100%);
+  --gradient-subtle: linear-gradient(135deg, #EAF4FF 0%, #E7F7F1 100%);
 }
 
 @theme inline {
