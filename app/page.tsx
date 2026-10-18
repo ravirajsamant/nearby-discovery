@@ -181,7 +181,22 @@ const FILTER_PILLS: FilterPill[] = [
   },
 ];
 
-const PLACES: Place[] = [
+function formatDistanceKm(distance: string): string {
+  if (!distance) return "";
+  const trimmed = distance.trim();
+  if (trimmed.endsWith("km")) return trimmed;
+  const match = trimmed.match(/^([\d.]+)\s*(?:mi|miles?)?$/i);
+  if (match) {
+    const miles = parseFloat(match[1]);
+    if (!isNaN(miles)) {
+      const km = miles * 1.609344;
+      return `${km.toFixed(1)} km`;
+    }
+  }
+  return trimmed;
+}
+
+const INITIAL_PLACES: Place[] = [
   // PUNE PLACES
   {
     id: 1,
@@ -696,6 +711,11 @@ const PLACES: Place[] = [
     filterTags: ["Trending", "Lively"],
   },
 ];
+
+const PLACES: Place[] = INITIAL_PLACES.map((p) => ({
+  ...p,
+  distance: formatDistanceKm(p.distance),
+}));
 
 /* Real Interactive Leaflet Map Component */
 function RealLeafletMap({
@@ -1523,8 +1543,7 @@ export default function Home() {
             const placeLat = place.location?.latitude ?? lat;
             const placeLng = place.location?.longitude ?? lng;
             const distKm = getDistanceKm(lat, lng, placeLat, placeLng);
-            const distMiles = distKm * 0.621371;
-            const distanceStr = `${distMiles.toFixed(1)} mi`;
+            const distanceStr = `${distKm.toFixed(1)} km`;
             const areaName = formattedAddress ? formattedAddress.split(",")[0] : city;
             const idKey = `${normKey}-${convertedPlaces.length}`;
             const numericId = hashStringToPositiveInt(idKey);
@@ -2593,8 +2612,8 @@ export default function Home() {
                 </button>
               </div>
             ) : (
-              /* High-Signal Cards Grid */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              /* Compact Horizontal Cards List (Single-Column) */
+              <div className="flex flex-col gap-3.5 sm:gap-4">
                 {filteredPlaces.map((place) => {
                   const isBookmarked = bookmarkedIds.includes(place.id);
                   const crowdStyle = getCrowdBadgeStyle(place.crowd);
@@ -2612,31 +2631,31 @@ export default function Home() {
                           setSelectedModalPlace(place);
                         }
                       }}
-                      className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-[#EAEAEA] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-[#D4D4D4] hover:shadow-[0_16px_36px_rgba(0,0,0,0.08)] cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-[#F97316]/30"
+                      className="group relative flex flex-row items-stretch overflow-hidden rounded-[8px] border border-[#EAEAEA] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D4D4D4] hover:shadow-[0_10px_25px_rgba(0,0,0,0.06)] cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-[#F97316]/30"
                     >
-                      {/* Top Image Section */}
-                      <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#F2F2F2]">
+                      {/* Left: Fixed-width thumbnail with consistent 4:3 aspect ratio */}
+                      <div className="relative w-28 sm:w-[200px] shrink-0 overflow-hidden bg-[#F2F2F2] aspect-[4/3] self-stretch">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={place.image}
                           alt={place.name}
-                          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                           loading="lazy"
                         />
 
-                        {/* Ambient Gradient Overlay */}
-                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/35" />
+                        {/* Ambient gradient overlay */}
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/25" />
 
                         {/* Rank Badge */}
-                        <span className="absolute top-3.5 left-3.5 inline-flex items-center rounded-full bg-black/50 backdrop-blur-md px-3 py-1 text-[11px] font-bold tracking-wider text-white border border-white/20 shadow-xs">
+                        <span className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 inline-flex items-center rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[10px] sm:text-[11px] font-bold tracking-wider text-white border border-white/20 shadow-xs">
                           #{place.rank}
                         </span>
 
-                        {/* 5) Bookmark Icon: Toggles saved state & persists to localStorage */}
+                        {/* Bookmark / Save Button */}
                         <button
                           type="button"
                           onClick={(e) => toggleBookmark(place.id, e)}
-                          className={`absolute top-3.5 right-3.5 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md border transition-all duration-200 active:scale-90 shadow-xs cursor-pointer ${
+                          className={`absolute top-2 right-2 sm:top-2.5 sm:right-2.5 flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full backdrop-blur-md border transition-all duration-200 active:scale-90 shadow-xs cursor-pointer ${
                             isBookmarked
                               ? "bg-[#F97316] text-white border-[#F97316]"
                               : "bg-black/45 text-white border-white/20 hover:bg-black/65"
@@ -2645,7 +2664,7 @@ export default function Home() {
                           aria-label="Save bookmark"
                         >
                           <svg
-                            className="h-4 w-4"
+                            className="h-3 w-3 sm:h-3.5 sm:w-3.5"
                             fill={isBookmarked ? "currentColor" : "none"}
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -2658,100 +2677,100 @@ export default function Home() {
                             />
                           </svg>
                         </button>
-
-                        {/* Distance Badge */}
-                        <span className="absolute bottom-3.5 right-3.5 inline-flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white border border-white/20 shadow-xs">
-                          <svg
-                            className="h-3.5 w-3.5 text-white/90"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          {place.distance}
-                        </span>
                       </div>
 
-                      {/* Card Content Area */}
-                      <div className="flex flex-col p-5 sm:p-6">
-                        {/* Category */}
-                        <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase text-[#F97316]">
-                          {place.category}
-                        </span>
+                      {/* Content Area: Middle & Right Columns */}
+                      <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-stretch justify-between">
+                        {/* Middle: Place Information (Hierarchy: Category -> Title -> Badges -> Description) */}
+                        <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col justify-start gap-1.5 sm:gap-2">
+                          {/* a. Category Label */}
+                          <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase text-[#F97316] block">
+                            {place.category}
+                          </span>
 
-                        {/* Place Name + Price Indicator */}
-                        <div className="mt-1 flex items-baseline justify-between gap-3">
-                          <h3 className="text-lg sm:text-[1.28rem] font-bold tracking-tight text-[#1A1A1A] group-hover:text-[#F97316] transition-colors leading-snug">
+                          {/* b. Place Title (maximum two lines) */}
+                          <h3 className="text-sm sm:text-base md:text-[1.05rem] font-bold tracking-tight text-[#1A1A1A] group-hover:text-[#F97316] transition-colors leading-snug line-clamp-2">
                             {place.name}
                           </h3>
-                          <span
-                            className="shrink-0 font-bold text-xs tracking-wider text-[#525252] bg-[#F4F4F4] px-2.5 py-1 rounded-md border border-[#EAEAEA] self-start"
-                            title={`Price level: ${place.price}`}
-                          >
-                            {place.price}
-                          </span>
-                        </div>
 
-                        {/* Smart Pills: Crowd Status & Best Time */}
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          {/* Crowd Pill */}
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[11px] font-semibold border ${crowdStyle.pill}`}
-                          >
-                            <span className={`h-1.5 w-1.5 rounded-full ${crowdStyle.dot}`} />
-                            {place.crowdStatus}
-                          </span>
-
-                          {/* Best Time Pill */}
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F4F4] px-3 py-0.5 text-[11px] font-medium text-[#525252] border border-[#EAEAEA]">
-                            <svg
-                              className="h-3 w-3 text-[#8A8A8A]"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={1.8}
+                          {/* c. Crowd/Vibe and Best-Time Badges */}
+                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            {/* Crowd Status Badge */}
+                            <span
+                              className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-semibold border ${crowdStyle.pill}`}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            {place.bestTime}
-                          </span>
-                        </div>
+                              <span className={`h-1.5 w-1.5 rounded-full ${crowdStyle.dot}`} />
+                              {place.crowdStatus}
+                            </span>
 
-                        {/* Description (max 2 lines) */}
-                        <p className="mt-3 text-[13px] leading-[1.6] text-[#525252] font-normal line-clamp-2">
-                          {place.description}
-                        </p>
-
-                        {/* Bottom Row: Vibe + Action Buttons */}
-                        <div className="mt-4 pt-4 border-t border-[#EAEAEA] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          {/* Vibe Line */}
-                          <div className="text-xs text-[#525252]">
-                            <span className="font-semibold text-[#1A1A1A] mr-1.5">Vibe:</span>
-                            <span>{place.vibe}</span>
+                            {/* Best-Time Recommendation */}
+                            <span className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-[#F4F4F4] px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-medium text-[#525252] border border-[#EAEAEA]">
+                              <svg
+                                className="h-3 w-3 text-[#8A8A8A]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={1.8}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              {place.bestTime}
+                            </span>
                           </div>
 
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                          {/* d. Short Description (limited to two lines) */}
+                          <p className="text-xs sm:text-[13px] leading-relaxed text-[#525252] font-normal line-clamp-2">
+                            {place.description}
+                          </p>
+                        </div>
+
+                        {/* Right: Secondary Info & Action Buttons */}
+                        <div className="shrink-0 p-3 sm:p-4 flex flex-wrap sm:flex-col justify-between items-center sm:items-center border-t sm:border-t-0 sm:border-l border-[#F0F0F0] gap-2.5 sm:gap-3 sm:w-[220px] bg-[#FAFAFA]/40 sm:bg-transparent">
+                          {/* Price Level & Distance (grouped near top on desktop) */}
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            {/* Price Indicator (using ₹ symbol) */}
+                            <span
+                              className="font-bold text-xs tracking-wider text-[#525252] bg-[#F4F4F4] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-[#EAEAEA]"
+                              title={`Price level: ${place.price.replace(/\$/g, "₹")}`}
+                            >
+                              {place.price.replace(/\$/g, "₹")}
+                            </span>
+
+                            {/* Distance Badge (in km) */}
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#F4F4F4] sm:bg-[#FAFAFA] px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-[#525252] border border-[#EAEAEA]">
+                              <svg
+                                className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#F97316]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                              </svg>
+                              {formatDistanceKm(place.distance)}
+                            </span>
+                          </div>
+
+                          {/* Action Buttons: Compact "Map" and "Details" with equal horizontal padding */}
+                          <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                             {/* Map Button: Switches to map view with this place selected */}
                             <button
                               type="button"
                               onClick={(e) => handleOpenMapWithPlace(place, e)}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAEAEA] bg-[#F7F7F7] px-3.5 py-1.5 text-xs font-semibold text-[#1A1A1A] hover:bg-[#F97316]/10 hover:border-[#F97316]/50 hover:text-[#EA580C] transition-all duration-200 cursor-pointer shadow-xs"
+                              className="inline-flex items-center gap-1 sm:gap-1.5 rounded-xl border border-[#EAEAEA] bg-[#F7F7F7] px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-[#1A1A1A] hover:bg-[#F97316]/10 hover:border-[#F97316]/50 hover:text-[#EA580C] transition-all duration-200 cursor-pointer shadow-xs"
                             >
                               <svg
                                 className="h-3.5 w-3.5 text-[#525252]"
@@ -2776,11 +2795,11 @@ export default function Home() {
                                 e.stopPropagation();
                                 setSelectedModalPlace(place);
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-[#F97316] px-3.5 py-1.5 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] hover:bg-[#EA580C] active:scale-95 transition-all duration-200 cursor-pointer"
+                              className="inline-flex items-center gap-1 rounded-xl bg-[#F97316] px-3 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] hover:bg-[#EA580C] active:scale-95 transition-all duration-200 cursor-pointer"
                             >
                               <span>Details</span>
                               <svg
-                                className="h-3.5 w-3.5"
+                                className="h-3 w-3 sm:h-3.5 sm:w-3.5"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -2802,7 +2821,7 @@ export default function Home() {
 
                 {/* Empty State */}
                 {filteredPlaces.length === 0 && (
-                  <div className="col-span-full py-14 text-center rounded-3xl border border-dashed border-[#EAEAEA] bg-white p-8">
+                  <div className="w-full py-14 text-center rounded-3xl border border-dashed border-[#EAEAEA] bg-white p-8">
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#FAFAFA] text-[#8A8A8A] mb-3 border border-[#EAEAEA]">
                       <svg
                         className="h-6 w-6"
