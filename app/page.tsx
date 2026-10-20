@@ -3140,7 +3140,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setSelectedModalPlace(null)}
-              className="absolute top-5 right-5 flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F8FC] text-[#5F6F82] hover:bg-[#DCE5EF] hover:text-[#172B4D] transition cursor-pointer"
+              className="absolute top-5 right-5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F8FC] text-[#5F6F82] hover:bg-[#DCE5EF] hover:text-[#172B4D] transition cursor-pointer"
               aria-label="Close modal"
             >
               <svg
