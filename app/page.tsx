@@ -1939,6 +1939,12 @@ export default function Home() {
     }
   };
 
+  const handleClearFilters = () => {
+    setSelectedVibe(null);
+    setSelectedCrowd(null);
+    setSelectedTag(null);
+  };
+
   const isPillActive = (pill: FilterPill) => {
     if (pill.type === "vibe") return selectedVibe === pill.value;
     if (pill.type === "crowd") return selectedCrowd === pill.value;
@@ -2453,30 +2459,51 @@ export default function Home() {
           </div>
 
           {/* 2) FILTERS: Interactive Pills */}
-          <div className="w-full flex justify-start sm:justify-center overflow-x-auto no-scrollbar px-1 py-1">
-            <div className="flex items-center gap-3 min-w-max mx-auto sm:mx-0">
-              {FILTER_PILLS.map((pill) => {
-                const isActive = isPillActive(pill);
+          <div className="w-full flex flex-col items-center gap-2">
+            <div className="w-full flex justify-start sm:justify-center overflow-x-auto no-scrollbar px-1 py-1">
+              <div className="flex items-center gap-3 min-w-max mx-auto sm:mx-0">
+                {FILTER_PILLS.map((pill) => {
+                  const isActive = isPillActive(pill);
 
-                return (
-                  <button
-                    key={pill.id}
-                    type="button"
-                    onClick={() => handlePillClick(pill)}
-                    className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold border transition-all duration-200 cursor-pointer ${
-                      isActive
-                        ? "bg-[#1769E0] text-white shadow-[0_3px_10px_rgba(23,105,224,0.3)] border-[#1769E0] scale-[1.02]"
-                        : "bg-white text-[#5F6F82] border-[#DCE5EF] hover:border-[#1769E0]/40 hover:text-[#172B4D] active:scale-95"
-                    }`}
-                  >
-                    <span className={isActive ? "text-white" : "text-[#8A99AB]"}>
-                      {pill.icon}
-                    </span>
-                    <span>{pill.label}</span>
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={pill.id}
+                      type="button"
+                      onClick={() => handlePillClick(pill)}
+                      className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold border transition-all duration-200 cursor-pointer ${
+                        isActive
+                          ? "bg-[#1769E0] text-white shadow-[0_3px_10px_rgba(23,105,224,0.3)] border-[#1769E0] scale-[1.02]"
+                          : "bg-white text-[#5F6F82] border-[#DCE5EF] hover:border-[#1769E0]/40 hover:text-[#172B4D] active:scale-95"
+                      }`}
+                    >
+                      <span className={isActive ? "text-white" : "text-[#8A99AB]"}>
+                        {pill.icon}
+                      </span>
+                      <span>{pill.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {(selectedVibe !== null || selectedCrowd !== null || selectedTag !== null) && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="inline-flex items-center gap-1 text-xs font-medium text-[#5F6F82] hover:text-[#1769E0] transition-colors cursor-pointer py-0.5 px-2 rounded-md hover:bg-[#EAF4FF]"
+              >
+                <svg
+                  className="h-3.5 w-3.5 text-[#8A99AB]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span>Clear filters</span>
+              </button>
+            )}
           </div>
         </section>
 
